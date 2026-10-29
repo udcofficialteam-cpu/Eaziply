@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+# Add a Sitemap line after the final Vercel URL is known.

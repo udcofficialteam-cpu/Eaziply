@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11152b">
+  <meta name="description" content="Free browser-based PDF tools to merge, split, rotate, organize, compress, convert, sign and edit PDF files. No account or paid API required.">
+  <meta name="robots" content="index,follow">
+  <title>PDFNest — Free PDF Tools: Merge, Split, Sign & Convert</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <!-- These are client-side libraries, not paid APIs. Files are processed in the visitor's browser. -->
+  <script defer src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#tools">Skip to tools</a>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="#home" aria-label="PDFNest home"><span class="brand-icon">P<span>F</span></span><span><strong>PDFNest</strong><small>FREE PDF TOOLKIT</small></span></a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="#home">Home</a>
+        <a href="#tools">All tools</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <a class="nav-cta" href="#tools">Choose a tool <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-content">
+        <div class="eyebrow"><span class="eyebrow-dot"></span> SIMPLE · PRIVATE · IN YOUR BROWSER</div>
+        <h1>Your PDF work,<br><span>all in one place.</span></h1>
+        <p>Merge, split, rotate, convert, sign and edit PDFs without creating an account. Your documents stay on your device while you work.</p>
+        <div class="hero-actions"><a class="btn btn-primary" href="#tools">Explore PDF tools <span>↓</span></a><span class="hero-note"><span class="mini-lock">▣</span> No upload to PDFNest servers</span></div>
+        <div class="hero-stats"><div><strong>12</strong><span>useful tools</span></div><div><strong>0</strong><span>accounts required</span></div><div><strong>100%</strong><span>browser-side processing* </span></div></div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
+        <div class="doc-back doc-back-one"><span>PDF</span><i></i><i></i><i></i></div>
+        <div class="doc-back doc-back-two"><span>PDF</span><i></i><i></i><i></i></div>
+        <div class="doc-main"><div class="doc-top"><span class="pdf-label">PDF</span><span class="doc-dots">•••</span></div><div class="doc-line long"></div><div class="doc-line"></div><div class="doc-line short"></div><div class="signature-scribble">Your Signature</div><div class="doc-check">✓</div></div>
+        <div class="floating-chip chip-merge">↔ Merge</div><div class="floating-chip chip-sign">✍ Sign</div><div class="floating-chip chip-download">↓ Download</div>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="Privacy and service features">
+      <div><span>✓</span> No account or paid API</div><div><span>✓</span> Documents processed locally</div><div><span>✓</span> Desktop and mobile friendly</div><div><span>✓</span> Free to use</div>
+    </section>
+
+    <section class="tools-section" id="tools">
+      <div class="section-header"><div><div class="eyebrow">THE TOOLBOX</div><h2>What do you need to do?</h2><p>Choose a PDF task. Add your file and the tool will guide you through the steps.</p></div><label class="search-tools"><span aria-hidden="true">⌕</span><input id="toolSearch" type="search" placeholder="Find a tool…" aria-label="Search PDF tools"></label></div>
+      <div class="category-row" role="group" aria-label="Filter tools">
+        <button class="category-btn is-active" type="button" data-category="all">All tools</button><button class="category-btn" type="button" data-category="organize">Organize PDF</button><button class="category-btn" type="button" data-category="convert">Convert PDF</button><button class="category-btn" type="button" data-category="sign">Sign & edit</button><button class="category-btn" type="button" data-category="optimize">Optimize</button>
+      </div>
+      <div class="tool-grid" id="toolGrid">
+        <button class="tool-card" data-tool="merge" data-category="organize"><span class="tool-icon icon-violet">⇄</span><strong>Merge PDF</strong><span>Combine multiple PDFs into one file.</span><em>Combine files <b>→</b></em></button>
+        <button class="tool-card" data-tool="split" data-category="organize"><span class="tool-icon icon-blue">⤢</span><strong>Split PDF</strong><span>Export chosen pages as separate PDFs in a ZIP.</span><em>Split pages <b>→</b></em></button>
+        <button class="tool-card" data-tool="extract" data-category="organize"><span class="tool-icon icon-teal">▤</span><strong>Extract pages</strong><span>Keep only the page numbers you need.</span><em>Extract pages <b>→</b></em></button>
+        <button class="tool-card" data-tool="delete" data-category="organize"><span class="tool-icon icon-red">−</span><strong>Delete pages</strong><span>Remove selected pages from a PDF.</span><em>Remove pages <b>→</b></em></button>
+        <button class="tool-card" data-tool="rotate" data-category="organize"><span class="tool-icon icon-amber">↻</span><strong>Rotate PDF</strong><span>Rotate all pages or a selected range.</span><em>Rotate pages <b>→</b></em></button>
+        <button class="tool-card" data-tool="images-to-pdf" data-category="convert"><span class="tool-icon icon-green">▧</span><strong>JPG to PDF</strong><span>Turn multiple images into one PDF.</span><em>Create PDF <b>→</b></em></button>
+        <button class="tool-card" data-tool="pdf-to-images" data-category="convert"><span class="tool-icon icon-blue">▣</span><strong>PDF to JPG / PNG</strong><span>Export PDF pages as images in a ZIP.</span><em>Convert pages <b>→</b></em></button>
+        <button class="tool-card" data-tool="sign" data-category="sign"><span class="tool-icon icon-violet">✍</span><strong>Sign PDF</strong><span>Type, draw or upload a signature and place it.</span><em>Add signature <b>→</b></em></button>
+        <button class="tool-card" data-tool="add-text" data-category="sign"><span class="tool-icon icon-amber">T</span><strong>Fill & add text</strong><span>Add names, dates and text to any page.</span><em>Fill document <b>→</b></em></button>
+        <button class="tool-card" data-tool="watermark" data-category="sign"><span class="tool-icon icon-teal">◈</span><strong>Watermark PDF</strong><span>Add a text watermark to pages.</span><em>Add watermark <b>→</b></em></button>
+        <button class="tool-card" data-tool="page-numbers" data-category="sign"><span class="tool-icon icon-blue">№</span><strong>Add page numbers</strong><span>Number every page in one action.</span><em>Number pages <b>→</b></em></button>
+        <button class="tool-card" data-tool="compress" data-category="optimize"><span class="tool-icon icon-green">⌁</span><strong>Optimize PDF (basic)</strong><span>Re-save a PDF using object streams.</span><em>Optimize file <b>→</b></em></button>
+      </div>
+      <p class="no-results" id="noToolResults" hidden>No tools match that search. Try another word.</p>
+    </section>
+
+    <section class="workbench-section" id="workbench" hidden aria-labelledby="workbenchTitle">
+      <div class="workbench-heading"><div><div class="eyebrow">PDF WORKSPACE</div><h2 id="workbenchTitle">Choose a tool</h2><p id="workbenchDescription">Upload a file to begin.</p></div><button type="button" class="btn btn-ghost" id="closeWorkbench">Close ✕</button></div>
+      <div class="workbench-card">
+        <div class="workbench-topline"><div class="work-step"><span>1</span><div><strong>Add your files</strong><small>Select PDF or image files from your device.</small></div></div><div class="work-step"><span>2</span><div><strong>Set options</strong><small>Choose pages, format or signing details.</small></div></div><div class="work-step"><span>3</span><div><strong>Download</strong><small>Save the result directly to your device.</small></div></div></div>
+        <div class="workbench-content">
+          <div class="input-column">
+            <label class="upload-box" id="uploadBox"><input type="file" id="fileInput" hidden><span class="upload-symbol">↑</span><strong id="uploadTitle">Choose file(s)</strong><span id="uploadHint">PDF files supported</span><span class="upload-button">Browse files</span></label>
+            <div class="selected-files" id="selectedFiles" hidden></div>
+            <div id="toolOptions" class="tool-options"></div>
+            <div class="action-row"><button type="button" class="btn btn-primary" id="runTool" disabled>Process PDF <span>→</span></button><button type="button" class="btn btn-ghost" id="resetTool">Reset</button></div>
+            <div class="status-box" id="statusBox" role="status" aria-live="polite"><span class="status-dot"></span><span id="statusText">Choose a tool and upload your file to begin.</span></div>
+          </div>
+          <div class="preview-column" id="previewColumn">
+            <div class="preview-header"><div><strong>Document preview</strong><small id="previewMeta">Your PDF preview will appear here</small></div><div class="page-controls" id="pageControls" hidden><button type="button" id="prevPage" aria-label="Previous page">‹</button><span id="pageIndicator">1 / 1</span><button type="button" id="nextPage" aria-label="Next page">›</button></div></div>
+            <div class="preview-empty" id="previewEmpty"><span class="preview-file-icon">PDF</span><strong>Preview appears here</strong><span>For signing or adding text, click the document where you want to place the item.</span></div>
+            <div class="pdf-stage-wrap" id="pdfStageWrap" hidden><div class="pdf-stage" id="pdfStage"><canvas id="pdfCanvas"></canvas><div id="placementOverlay" class="placement-overlay" hidden></div></div></div>
+            <p class="preview-help" id="previewHelp" hidden>Tip: click the document to set the placement position. You can drag the preview item to fine-tune its position.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="how-section" id="how-it-works">
+      <div class="section-header"><div><div class="eyebrow">THREE SIMPLE STEPS</div><h2>From upload to download</h2><p>Get your everyday PDF work done without a complicated workflow.</p></div></div>
+      <div class="how-grid"><article><span>01</span><h3>Choose a tool</h3><p>Pick merge, split, convert, sign or another PDF task.</p></article><article><span>02</span><h3>Set it up</h3><p>Upload your files and choose pages, options or signature placement.</p></article><article><span>03</span><h3>Save the result</h3><p>Download your processed file. Your document stays in your browser.</p></article></div>
+      <p class="disclaimer">*PDFNest uses client-side JavaScript libraries delivered by public CDNs. An internet connection is needed to load these libraries. Your selected PDF content is processed in your browser and is not uploaded to a PDFNest processing server.</p>
+    </section>
+
+    <section class="faq-section" id="faq"><div class="section-header"><div><div class="eyebrow">HELP CENTER</div><h2>Frequently asked questions</h2></div></div>
+      <details><summary>Are my PDFs uploaded to a server?</summary><p>No. The tools in this first version process selected PDF and image files in your browser. The app downloads its JavaScript libraries from public CDNs, but it does not send your selected documents to a PDFNest processing server.</p></details>
+      <details><summary>Does PDFNest need an API key or an account?</summary><p>No API key, database, account or custom backend is required. The static website is designed for GitHub and Vercel hosting. Internet access is required to load the app and its CDN libraries.</p></details>
+      <details><summary>Can I add a handwritten-style signature?</summary><p>Yes. In Sign PDF, type a name and choose a style, draw with your mouse or touch screen, or upload a transparent signature image. Place it on the page preview and download the resulting PDF. A visible signature is not the same as a certificate-based digital signature.</p></details>
+      <details><summary>Will compression always make my PDF smaller?</summary><p>No. Basic optimization rewrites the PDF using object streams, but it does not aggressively re-compress every embedded image. The resulting file may be smaller, similar in size, or occasionally larger.</p></details>
+      <details><summary>Does PDFNest convert PDFs to editable Word or Excel files?</summary><p>Not in this first version. High-quality Office conversion and OCR for scanned documents require more specialized processing and testing. We prefer to show only tools that are actually implemented.</p></details>
+      <details><summary>Is an electronic signature legally valid?</summary><p>Rules and acceptance vary by document, recipient and jurisdiction. PDFNest places a visible signature image; it does not independently verify identity or apply a certificate-based cryptographic digital signature.</p></details>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div class="footer-inner"><a class="brand footer-brand" href="#home"><span class="brand-icon">P<span>F</span></span><span><strong>PDFNest</strong><small>FREE PDF TOOLKIT</small></span></a><p>Useful PDF tools. No account. No fuss.</p><div class="footer-links"><a href="about.html">About</a><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms</a><a href="mailto:udc.officialteam@gmail.com">Contact</a></div></div><p class="footer-note">PDFNest is an independent utility. It is not affiliated with Sejda, iLovePDF, Adobe or other PDF service providers. Processing is performed locally in your browser. Always keep a copy of the original document.</p><p class="copyright">© <span id="year"></span> PDFNest</p></footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
