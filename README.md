@@ -1,4 +1,4 @@
-# PDFNest — Free Browser-Based PDF Toolkit
+# Eaziply — Free Browser-Based PDF Toolkit
 
 A static website for GitHub + Vercel. No custom backend, database, paid API, or API key is required.
 
@@ -19,7 +19,7 @@ A static website for GitHub + Vercel. No custom backend, database, paid API, or 
 
 ## How it works
 
-The site is static HTML/CSS/JavaScript. The PDF operations run in the user's browser with `pdf-lib`, PDF.js, and JSZip loaded from public CDNs. There is no paid API or document-processing backend. The browser needs an internet connection to load these libraries; selected PDF/image documents are processed locally and are not uploaded to a PDFNest processing server.
+The site is static HTML/CSS/JavaScript. The PDF operations run in the user's browser with `pdf-lib`, PDF.js, and JSZip loaded from public CDNs. There is no paid API or document-processing backend. The browser needs an internet connection to load these libraries; selected PDF/image documents are processed locally and are not uploaded to an Eaziply processing server.
 
 ### Libraries
 
@@ -32,11 +32,11 @@ Review the current library licenses and versions before making a commercial rele
 ## GitHub + Vercel deployment
 
 1. Download and extract this ZIP.
-2. Create a new GitHub repository (suggested name: `pdfnest`).
+2. Create a new GitHub repository (suggested name: `eaziply`).
 3. Upload **all files inside this folder** to the repository root. `index.html` must be at the root, not inside another nested directory.
 4. In Vercel, choose **Add New → Project**, import the GitHub repository, choose **Other** as the framework preset, leave the build command blank, and deploy the root directory.
 5. Test the tools with sample PDFs and images. Keep copies of the originals.
-6. Once Vercel gives you the final public URL, create a `sitemap.xml` using that exact URL and submit it to Google Search Console. Do not submit a guessed URL.
+6. Once Vercel gives you the final public URL, the included `sitemap.xml` and `robots.txt` use `https://eaziply.vercel.app/`. If your Vercel URL changes, update both files before submitting the sitemap to Google Search Console.
 
 ## Test checklist
 

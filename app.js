@@ -1,4 +1,4 @@
-/* PDFNest: browser-side PDF tools. No upload API, backend, account or paid API key. */
+/* Eaziply: browser-side PDF tools. No upload API, backend, account or paid API key. */
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
@@ -266,5 +266,5 @@
   $('prevPage').addEventListener('click',async()=>{if(state.pdfPage>1){state.pdfPage--;await renderCurrentPage();}});$('nextPage').addEventListener('click',async()=>{if(state.pdfPage<state.pageCount){state.pdfPage++;await renderCurrentPage();}});
   setupPlacementEvents(); $('year').textContent=new Date().getFullYear();
   // Inform the visitor if a CDN script failed, rather than leaving silent controls.
-  window.addEventListener('load',()=>{if(!window.PDFLib||!window.pdfjsLib||!window.JSZip)setTimeout(()=>{if(!window.PDFLib||!window.pdfjsLib||!window.JSZip){setStatus('Some browser libraries could not load. Check your connection or retry later; PDFNest does not use a paid API.','error');}},1000);});
+  window.addEventListener('load',()=>{if(!window.PDFLib||!window.pdfjsLib||!window.JSZip)setTimeout(()=>{if(!window.PDFLib||!window.pdfjsLib||!window.JSZip){setStatus('Some browser libraries could not load. Check your connection or retry later; Eaziply does not use a paid API.','error');}},1000);});
 })();
