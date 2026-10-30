@@ -4,67 +4,82 @@ A static website for GitHub + Vercel. No custom backend, database, paid API, or 
 
 ## Included tools
 
-- Merge PDFs (multiple files, manually reorder them before processing)
+- Merge PDFs (multiple files, reorder before processing)
 - Split selected pages into individual PDF files in a ZIP
 - Extract selected pages into a new PDF
 - Delete selected pages
 - Rotate all or selected pages
 - Combine JPG/PNG and browser-supported images into a PDF
 - Render selected PDF pages to JPG/PNG images in a ZIP
-- Sign PDF with a typed name (6 visual styles), drawn signature, or uploaded signature image
-- Save up to 8 reusable signature images in the browser local storage on the visitor's device
-- Continuous vertical multi-page editor view for Sign PDF and Fill & add text, with a persistent page counter and exact page-number jump
-- Add multiple movable/resizable signature and text overlays on different pages
-- Place editable text boxes directly on a PDF page; choose font, size and color
-- Option to visually cover old text with a white patch before adding replacement text (not a true rewrite of the original text layer)
-- Add a text watermark
-- Add page numbers
-- Basic PDF optimization/re-save (may not shrink all files; does not aggressively recompress embedded images)
+- **Unified Fill & Sign PDF editor** with Text, Forms, Sign and Select modes
+- Add text watermarks and page numbers
+- Basic PDF optimization/re-save (may not shrink every file; does not aggressively recompress embedded images)
+
+## Fill & Sign editor
+
+The single **Fill & Sign PDF** tool opens one workspace inspired by common professional PDF editor workflows. All pages are shown in a continuous vertical stack, and the sticky `‹ page / total ›` control remains available. Type a page number and press Enter to jump directly to that page; scrolling updates the current page number.
+
+### Sign
+
+- Type a name and select from 12 handwriting-style fonts.
+- Draw with a mouse, trackpad or touch screen.
+- Upload a signature image (transparent PNG recommended).
+- Save up to eight signature images in the same browser/device and reuse or delete them later.
+- Click any page to place the selected signature; drag to move and use corner handles to resize.
+- Use **Repeat on all pages** to repeat the active page's placed items on pages without page-specific items.
+
+### Text
+
+- Select Text, then click a PDF page to create a directly editable text box.
+- Type or paste text; adjust font, size, colour, alignment, bold and italic.
+- Drag or resize the box. Duplicate or remove placed items.
+- Optional **Cover old text** adds a white patch behind replacement text. This is a visual cover, not a rewrite of the original PDF text layer, and it works best on plain backgrounds.
+
+### Forms
+
+- Detect and fill supported interactive AcroForm text fields, checkboxes, dropdowns, option lists and radio fields.
+- When the PDF is a flat scan or has no interactive fields, use Text and Sign to place items manually.
+
+### Export
+
+**Apply changes & Download** writes all placed signatures, added text and changed supported form-field values into one complete PDF. The original file remains unchanged.
+
+## Important limitations
+
+- This is an original Eaziply implementation inspired by common PDF-editor workflows, not a pixel-for-pixel Sejda clone.
+- It can add visible text/signatures and fill supported interactive PDF form fields. It cannot universally rewrite arbitrary original text objects in every PDF. The white-cover replacement is only a visual overlay; it may cover nearby lines or images. Scanned PDFs need manual placement.
+- A visible signature is not a certificate-based cryptographic digital signature and does not independently verify identity.
+- Password-protected/encrypted PDFs may fail to open.
+- PDF-to-image export creates raster images; it does not preserve selectable text in those images.
+- Large documents can use substantial browser memory. PDF-to-image export is limited to 40 pages per task; split ZIP exports are limited to 80 pages.
+- Saved signatures are stored in local storage on the current browser/device. Do not save sensitive signatures on shared or untrusted devices.
 
 ## How it works
 
-The site is static HTML/CSS/JavaScript. The PDF operations run in the user's browser with `pdf-lib`, PDF.js, and JSZip loaded from public CDNs. There is no paid API or document-processing backend. The browser needs an internet connection to load these libraries; selected PDF/image documents are processed locally and are not uploaded to an Eaziply processing server.
-
-### Libraries
-
-- `pdf-lib` 1.17.1 — PDF creation/modification and page operations (MIT-licensed project)
-- `pdfjs-dist` 3.11.174 — in-browser PDF rendering (Apache-2.0 project)
-- `jszip` 3.10.1 — browser ZIP exports (MIT-licensed project)
-
-Review the current library licenses and versions before making a commercial release. Third-party CDN providers may receive ordinary requests for library files.
+The site is static HTML/CSS/JavaScript. PDF operations run in the visitor's browser with `pdf-lib`, PDF.js and JSZip loaded from public CDNs. No paid API or document-processing backend is used. An internet connection is required to load the site libraries and handwriting fonts. Selected PDF/image content is processed locally and is not uploaded to an Eaziply processing server. Third-party CDN providers receive ordinary requests for the static library/font files.
 
 ## GitHub + Vercel deployment
 
-1. Download and extract this ZIP.
-2. Create a new GitHub repository (suggested name: `eaziply`).
-3. Upload **all files inside this folder** to the repository root. `index.html` must be at the root, not inside another nested directory.
-4. In Vercel, choose **Add New → Project**, import the GitHub repository, choose **Other** as the framework preset, leave the build command blank, and deploy the root directory.
-5. Test the tools with sample PDFs and images. Keep copies of the originals.
-6. Once Vercel gives you the final public URL, the included `sitemap.xml` and `robots.txt` use `https://eaziply.vercel.app/`. If your Vercel URL changes, update both files before submitting the sitemap to Google Search Console.
+1. Download and extract the website ZIP.
+2. Create or open your GitHub repository (suggested name: `eaziply`).
+3. Upload all files in this folder to the repository root. `index.html` must be at the root, not inside another folder.
+4. In Vercel, import the GitHub repository, choose **Other** as the framework preset, leave the build command blank, and deploy the root directory.
+5. Test the tools with small sample PDFs before using important documents. Keep copies of originals.
+6. `robots.txt` and `sitemap.xml` use `https://eaziply.vercel.app/`. Update both if your public URL changes.
 
 ## Test checklist
 
-- Merge two sample PDFs and verify page order.
-- Extract and delete selected pages from a test PDF.
-- Rotate a page and verify it in a PDF viewer.
-- Create a PDF from two JPG/PNG images.
-- Export a short PDF to image files and open the ZIP.
-- Type, draw, and upload a test signature; test the continuous page stack, exact page jump (for example page 20 of 33), saved-signature reuse after refresh, page-specific signatures, dragging/resizing, and complete-document export.
-- Add text, a watermark, and page numbers.
-- Try basic optimization and compare the actual file size; this tool does not promise a smaller file.
-- Test on desktop and mobile with a small PDF first.
-
-## Known limitations
-
-- This is a useful first version, not a full replacement for every iLovePDF/Sejda capability.
-- High-quality PDF-to-Word/Excel conversion, OCR for scanned documents, password unlock/protection, repair of damaged files, and certificate-based digital signatures are not implemented.
-- Password-protected/encrypted PDFs may fail to open.
-- PDF-to-image export creates raster images; it does not preserve selectable text in those images.
-- Large documents can use substantial browser memory. The PDF-to-image tool caps one export at 40 pages and split ZIP exports at 80 pages.
-- Saved signatures are stored in browser local storage on the current device; users should not save them on shared devices.
-- A visible signature mark is not a certificate-based cryptographic signature or proof of identity.
-- Existing PDF text is not directly edited; the optional white cover is a visual overlay and is safest on plain backgrounds. Confirm the recipient's requirements for important/legal documents.
-- The first version uses external CDNs for JavaScript libraries, so the app itself will need internet access to load unless the libraries are later bundled with the repository.
+- Merge two PDFs and verify page order.
+- Split, extract, delete and rotate pages.
+- Convert JPG/PNG images to PDF and PDF pages to JPG/PNG.
+- In Fill & Sign, upload a multi-page test PDF (for example 33 pages) and check the continuous stack.
+- Type `20` into the page control and press Enter; verify page 20 appears.
+- Create a typed signature, save it, switch to another tool, reopen Fill & Sign and verify it is still available.
+- Draw and upload a signature; place, drag, resize, duplicate and remove it.
+- Add text on different pages, edit it directly, format it, move and resize it.
+- Test a PDF with interactive AcroForm fields and check that changed values appear in the downloaded file.
+- Download the full PDF and reopen it in a PDF reader to verify every edited page.
+- Repeat on desktop and mobile. Try a small file first.
 
 ## Contact
 
