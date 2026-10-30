@@ -92,10 +92,17 @@
             <div class="status-box" id="statusBox" role="status" aria-live="polite"><span class="status-dot"></span><span id="statusText">Choose a tool and upload your file to begin.</span></div>
           </div>
           <div class="preview-column" id="previewColumn">
-            <div class="preview-header"><div><strong>Document preview</strong><small id="previewMeta">Your PDF preview will appear here</small></div><div class="page-controls" id="pageControls" hidden><button type="button" id="prevPage" aria-label="Previous page">‹</button><span id="pageIndicator">1 / 1</span><button type="button" id="nextPage" aria-label="Next page">›</button></div></div>
+            <div class="preview-header" id="previewHeader"><div><strong>Document preview</strong><small id="previewMeta">Your PDF preview will appear here</small></div><div class="page-controls" id="pageControls" hidden>
+                <button type="button" id="prevPage" aria-label="Previous page">‹</button>
+                <label class="page-jump-control" aria-label="Current page and total pages"><input id="pageJumpInput" type="number" min="1" max="1" value="1" inputmode="numeric" aria-label="Go to page"><span>/</span><strong id="pageCountLabel">1</strong></label>
+                <button type="button" id="nextPage" aria-label="Next page">›</button>
+              </div></div>
             <div class="preview-empty" id="previewEmpty"><span class="preview-file-icon">PDF</span><strong>Preview appears here</strong><span>For signing or adding text, click the document where you want to place the item.</span></div>
-            <div class="pdf-stage-wrap" id="pdfStageWrap" hidden><div class="pdf-stage" id="pdfStage"><canvas id="pdfCanvas"></canvas><div id="placementOverlay" class="placement-overlay" hidden></div></div></div>
-            <p class="preview-help" id="previewHelp" hidden>Tip: click the document to set the placement position. You can drag the preview item to fine-tune its position.</p>
+            <div class="pdf-stage-wrap" id="pdfStageWrap" hidden>
+              <div class="pdf-stage" id="pdfStage"><canvas id="pdfCanvas"></canvas><div id="placementOverlay" class="placement-overlay" hidden></div></div>
+              <div class="continuous-pages" id="continuousPages" hidden></div>
+            </div>
+            <p class="preview-help" id="previewHelp" hidden>For Sign PDF and Fill &amp; add text, every page is shown below. Click a page to add an item, use the page number box to jump directly to a page, and drag or resize items.</p>
           </div>
         </div>
       </div>
@@ -110,7 +117,10 @@
     <section class="faq-section" id="faq"><div class="section-header"><div><div class="eyebrow">HELP CENTER</div><h2>Frequently asked questions</h2></div></div>
       <details><summary>Are my PDFs uploaded to a server?</summary><p>No. The tools in this first version process selected PDF and image files in your browser. The app downloads its JavaScript libraries from public CDNs, but it does not send your selected documents to an Eaziply processing server.</p></details>
       <details><summary>Does Eaziply need an API key or an account?</summary><p>No API key, database, account or custom backend is required. The static website is designed for GitHub and Vercel hosting. Internet access is required to load the app and its CDN libraries.</p></details>
-      <details><summary>Can I add a handwritten-style signature?</summary><p>Yes. In Sign PDF, type a name and choose a style, draw with your mouse or touch screen, or upload a transparent signature image. Place it on the page preview and download the resulting PDF. A visible signature is not the same as a certificate-based digital signature.</p></details>
+      <details><summary>Can I save and reuse my signature?</summary><p>Yes. In Sign PDF, type, draw or upload your signature and choose “Save this signature”. It is stored in this browser on this device, so you can select it again on future visits. You can delete saved signatures from the same controls. Do not save a signature on a shared or untrusted device.</p></details>
+      <details><summary>Can I see every PDF page and jump to an exact page?</summary><p>Yes. In Sign PDF and Fill &amp; add text, pages appear in a continuous vertical view. The page control (for example, 1 / 33) stays available; type a page number and press Enter to jump directly to it. Scrolling also updates the current page number.</p></details>
+      <details><summary>Can I edit text already inside a PDF?</summary><p>Eaziply can add new editable text boxes. For existing text, the “Cover old text” option places a white patch behind replacement text; it does not rewrite the original PDF text layer and may cover nearby lines or images. It works best on plain white areas.</p></details>
+      <details><summary>Can I add a handwritten-style signature?</summary><p>Yes. In Sign PDF, type a name and choose a style, draw with your mouse or touch screen, or upload a transparent signature image. Place it on any page, drag or resize it, and download the entire edited PDF. A visible signature is not the same as a certificate-based digital signature.</p></details>
       <details><summary>Will compression always make my PDF smaller?</summary><p>No. Basic optimization rewrites the PDF using object streams, but it does not aggressively re-compress every embedded image. The resulting file may be smaller, similar in size, or occasionally larger.</p></details>
       <details><summary>Does Eaziply convert PDFs to editable Word or Excel files?</summary><p>Not in this first version. High-quality Office conversion and OCR for scanned documents require more specialized processing and testing. We prefer to show only tools that are actually implemented.</p></details>
       <details><summary>Is an electronic signature legally valid?</summary><p>Rules and acceptance vary by document, recipient and jurisdiction. Eaziply places a visible signature image; it does not independently verify identity or apply a certificate-based cryptographic digital signature.</p></details>
