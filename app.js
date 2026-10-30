@@ -6,7 +6,9 @@
   const state = {
     tool: null, files: [], previewDoc: null, previewFile: null, pdfPage: 1, pageCount: 0, viewScale: 1, previewPageWidth: 600,
     position: { x: 0.43, y: 0.62 }, positionSet: false, signatureImageFile: null,
-    signatureDrawn: false, signaturePadReady: false, busy: false
+    signatureDrawn: false, signaturePadReady: false, busy: false,
+    continuousView: false, pageObserver: null, pageRenderJobs: new Map(),
+    pageItems: [], selectedItemId: null, itemCounter: 0, savedSignatures: []
   };
   const TOOL = {
     merge: { title:'Merge PDF', description:'Combine two or more PDFs into one document, in the order you select them.', accept:'.pdf,application/pdf', multiple:true, category:'organize' },
@@ -57,34 +59,121 @@
       case 'rotate': return `<div class="option-field"><label for="pageRange">Pages to rotate</label><input id="pageRange" value="all" placeholder="all or 1, 3-5"><span class="option-hint">Leave as “all” to rotate every page.</span></div><div class="option-field"><label for="rotateDegrees">Rotation</label><select id="rotateDegrees"><option value="90">90° clockwise</option><option value="180">180°</option><option value="270">270° clockwise</option></select></div>`;
       case 'images-to-pdf': return `<div class="option-field"><label for="imagePageSize">PDF page size</label><select id="imagePageSize"><option value="fit">Fit page to each image</option><option value="a4">A4 page (fit image inside)</option><option value="letter">US Letter page (fit image inside)</option></select><span class="option-hint">Images are arranged in the order selected.</span></div><div class="note-box">For best output, upload JPG or PNG files. Other image formats are converted through your browser when supported.</div>`;
       case 'pdf-to-images': return `<div class="option-field"><label for="pageRange">Pages to export</label><input id="pageRange" value="all" placeholder="all or 1, 3-5"><span class="option-hint">Large PDFs may use a lot of device memory. A maximum of 40 pages per export is allowed.</span></div><div class="option-row"><div class="option-field"><label for="imageFormat">Image format</label><select id="imageFormat"><option value="image/jpeg">JPG (smaller)</option><option value="image/png">PNG (crisper)</option></select></div><div class="option-field"><label for="renderScale">Image quality / scale</label><select id="renderScale"><option value="1">Standard</option><option value="1.5" selected>High</option><option value="2">Very high</option></select></div></div>`;
-      case 'sign': return `<div class="option-field"><label for="signatureMode">Signature method</label><select id="signatureMode"><option value="typed">Type a name</option><option value="draw">Draw with mouse or touch</option><option value="upload">Upload signature image</option></select></div><div id="typedSignatureFields"><div class="option-field"><label for="signatureName">Name / signature text</label><input id="signatureName" value="Your Name" maxlength="90" placeholder="Type your name"></div><div class="option-row"><div class="option-field"><label for="signatureStyle">Signature style</label><select id="signatureStyle"><option value="brush">Brush script</option><option value="elegant">Elegant cursive</option><option value="classic">Classic italic</option><option value="modern">Modern italic</option><option value="hand">Handwritten</option><option value="bold">Bold cursive</option></select></div><div class="option-field"><label for="signatureColor">Ink color</label><input id="signatureColor" type="color" value="#17213f" style="width:100%;height:40px;border:1px solid #dfe2ed;border-radius:10px;background:#fff;padding:4px"></div></div></div><div id="drawSignatureFields" hidden><div class="option-field"><label>Draw your signature below</label><div class="signature-pad-wrap"><canvas class="signature-pad" id="signaturePad" width="640" height="180" aria-label="Draw signature here"></canvas><div class="pad-actions"><button class="small-button" id="clearSignaturePad" type="button">Clear drawing</button></div></div></div></div><div id="uploadSignatureFields" hidden><div class="option-field"><label for="signatureUpload">Signature image (PNG preferred)</label><input id="signatureUpload" type="file" accept="image/png,image/jpeg,image/webp"><span class="option-hint">Transparent PNG usually gives the cleanest result.</span></div></div><div class="option-field"><label for="signatureWidth">Signature width (PDF points)</label><input id="signatureWidth" type="number" min="35" max="400" value="150"></div><div class="option-field"><label for="pageRange">Apply to page(s)</label><input id="pageRange" value="1" placeholder="e.g. 1, 3-5 or all"><span class="option-hint">Navigate the preview pages on the right, click where the signature should go, or drag the signature preview to adjust its position.</span></div><div class="note-box">This creates a visible signature mark. It is not a certificate-based digital signature or identity verification.</div>`;
-      case 'add-text': return `<div class="option-field"><label for="textToAdd">Text to place</label><textarea id="textToAdd" maxlength="1500" placeholder="Type a name, address, date or other information"></textarea></div><div class="option-row"><div class="option-field"><label for="textFontSize">Font size (pt)</label><input id="textFontSize" type="number" min="6" max="72" value="12"></div><div class="option-field"><label for="textColor">Text color</label><input id="textColor" type="color" value="#111827" style="width:100%;height:40px;border:1px solid #dfe2ed;border-radius:10px;background:#fff;padding:4px"></div></div><div class="option-field"><label for="pageRange">Apply to page(s)</label><input id="pageRange" value="1" placeholder="e.g. 1, 3-5 or all"><span class="option-hint">Click the preview page to choose where the text starts.</span></div>`;
+      case 'sign': return `<div class="option-field"><label for="signatureMode">Signature method</label><select id="signatureMode"><option value="typed">Type a name</option><option value="draw">Draw with mouse or touch</option><option value="upload">Upload signature image</option><option value="saved">Use a saved signature</option></select></div>
+        <div id="typedSignatureFields"><div class="option-field"><label for="signatureName">Name / signature text</label><input id="signatureName" value="" maxlength="90" placeholder="Type your name"></div><div class="option-row"><div class="option-field"><label for="signatureStyle">Signature style</label><select id="signatureStyle"><option value="brush">Brush script</option><option value="elegant">Elegant cursive</option><option value="classic">Classic italic</option><option value="modern">Modern italic</option><option value="hand">Handwritten</option><option value="bold">Bold cursive</option></select></div><div class="option-field"><label for="signatureColor">Ink color</label><input id="signatureColor" type="color" value="#17213f"></div></div></div>
+        <div id="drawSignatureFields" hidden><div class="option-field"><label>Draw your signature below</label><div class="signature-pad-wrap"><canvas class="signature-pad" id="signaturePad" width="640" height="180" aria-label="Draw signature here"></canvas><div class="pad-actions"><button class="small-button" id="clearSignaturePad" type="button">Clear drawing</button></div></div></div></div>
+        <div id="uploadSignatureFields" hidden><div class="option-field"><label for="signatureUpload">Signature image (PNG preferred)</label><input id="signatureUpload" type="file" accept="image/png,image/jpeg,image/webp"><span class="option-hint">Transparent PNG usually gives the cleanest result.</span></div></div>
+        <div id="savedSignatureFields" hidden><div class="option-field"><label for="savedSignatureSelect">Choose a saved signature</label><select id="savedSignatureSelect"><option value="">No saved signatures yet</option></select></div><button class="small-button" id="deleteSavedSignatureButton" type="button">Delete selected saved signature</button></div>
+        <div class="signature-save-row"><button class="small-button" id="saveSignatureButton" type="button">＋ Save this signature</button><span id="savedSignatureStatus" class="option-hint">Saved signatures stay in this browser on this device.</span></div>
+        <div class="option-field"><label for="signatureWidth">New signature width (PDF points)</label><input id="signatureWidth" type="number" min="35" max="400" value="150"></div>
+        <div class="option-field"><label for="pageRange">Apply to pages</label><input id="pageRange" value="placed" placeholder="placed, all, 1, 3-5"><span class="option-hint">Use “placed” to sign only pages where you added a signature. Use “all” or a page range to repeat the active page's signature where no page-specific one exists.</span></div>
+        <div class="note-box">Click any page below to place the selected signature. You can add more than one signature, drag it by its handle and resize it. This creates a visible signature mark, not a certificate-based digital signature.</div>`;
+      case 'add-text': return `<div class="option-field"><label for="textToAdd">Text to place or paste</label><textarea id="textToAdd" maxlength="1500" rows="3" placeholder="Optional: type text here before clicking a page. You can also type directly in the box placed on the PDF."></textarea><span class="option-hint">Click anywhere on a page to create an editable text box. You can add several boxes on each page.</span></div>
+        <div class="option-row"><div class="option-field"><label for="textFontSize">Font size (pt)</label><input id="textFontSize" type="number" min="6" max="72" value="12"></div><div class="option-field"><label for="textColor">Text color</label><input id="textColor" type="color" value="#111827"></div></div>
+        <div class="option-field"><label for="textFontFamily">Font</label><select id="textFontFamily"><option value="helvetica">Arial / Helvetica</option><option value="times">Times Roman</option><option value="courier">Courier</option></select></div>
+        <label class="check-field cover-text-option"><input id="coverExistingText" type="checkbox"><span>Cover old text behind the new text (best on plain white backgrounds)</span></label>
+        <div class="option-field"><label for="pageRange">Apply to pages</label><input id="pageRange" value="placed" placeholder="placed, all, 1, 3-5"><span class="option-hint">Use “placed” for page-specific text boxes. Use “all” or a range to repeat the active page's text on pages without their own items.</span></div>
+        <div class="note-box">Existing PDF text cannot be directly rewritten in every PDF. “Cover old text” places a white patch behind your replacement; it may cover lines or images underneath. Scanned PDFs also need manual placement.</div>`;
       case 'watermark': return `<div class="option-field"><label for="watermarkText">Watermark text</label><input id="watermarkText" value="CONFIDENTIAL" maxlength="100"></div><div class="option-row"><div class="option-field"><label for="watermarkSize">Font size (pt)</label><input id="watermarkSize" type="number" min="10" max="100" value="42"></div><div class="option-field"><label for="watermarkAngle">Angle</label><select id="watermarkAngle"><option value="45">45° diagonal</option><option value="0">Horizontal</option><option value="-45">-45° diagonal</option></select></div></div><div class="option-field"><label for="pageRange">Apply to page(s)</label><input id="pageRange" value="all" placeholder="all or 1, 3-5"></div>`;
       case 'page-numbers': return `<div class="option-row"><div class="option-field"><label for="pageNumberStart">Start numbering at</label><input id="pageNumberStart" type="number" min="0" max="999999" value="1"></div><div class="option-field"><label for="pageNumberPosition">Position</label><select id="pageNumberPosition"><option value="bottom-center">Bottom centre</option><option value="bottom-right">Bottom right</option><option value="bottom-left">Bottom left</option><option value="top-center">Top centre</option></select></div></div><div class="option-field"><label for="pageNumberFormat">Number format</label><select id="pageNumberFormat"><option value="number">1, 2, 3…</option><option value="page">Page 1, Page 2…</option></select></div>`;
       case 'compress': return `<div class="note-box">Basic optimization rewrites the PDF with object streams. It does not resize embedded photos or remove all redundant content, so the result may not be smaller. This tool does not rasterize pages, helping preserve selectable text and vector content.</div>`;
       default: return '';
     }
   }
+  function clearPageObserver() { if (state.pageObserver) { state.pageObserver.disconnect(); state.pageObserver = null; } state.pageRenderJobs.clear(); }
   function selectTool(tool) {
     if (!TOOL[tool]) return;
+    clearPageObserver();
     state.tool=tool; state.files=[]; state.previewDoc=null; state.previewFile=null; state.pdfPage=1; state.pageCount=0; state.position={x:.43,y:.62}; state.positionSet=false; state.signatureImageFile=null; state.signatureDrawn=false;
+    state.continuousView=false; state.pageItems=[]; state.selectedItemId=null; state.itemCounter=0;
     const def=TOOL[tool]; $('workbenchTitle').textContent=def.title; $('workbenchDescription').textContent=def.description;
     $('fileInput').value=''; $('fileInput').accept=def.accept; $('fileInput').multiple=!!def.multiple;
     $('uploadTitle').textContent=def.multiple?'Choose files':'Choose a file';
     $('uploadHint').textContent=tool==='images-to-pdf'?'JPG, PNG and supported browser image formats':(tool==='merge'?'Select two or more PDF files':'PDF file · select from your device');
     $('selectedFiles').hidden=true; $('selectedFiles').innerHTML=''; $('runTool').disabled=true;
     $('toolOptions').innerHTML=optionsHtml(tool);
-    $('previewEmpty').hidden=false; $('pdfStageWrap').hidden=true; $('pageControls').hidden=true; $('previewHelp').hidden=!['sign','add-text'].includes(tool); $('previewMeta').textContent='Your PDF preview will appear here'; $('placementOverlay').hidden=true;
+    $('previewEmpty').hidden=false; $('pdfStageWrap').hidden=true; $('pdfStageWrap').classList.remove('is-continuous'); $('previewHeader').classList.remove('is-sticky-page-controls'); $('workbench').querySelector('.workbench-card').classList.remove('is-continuous'); $('pdfStage').hidden=false; $('continuousPages').hidden=true; $('continuousPages').innerHTML=''; $('pageControls').hidden=true; $('previewHelp').hidden=!['sign','add-text'].includes(tool); $('previewMeta').textContent='Your PDF preview will appear here'; $('placementOverlay').hidden=true;
     $('workbench').hidden=false; $('workbench').scrollIntoView({behavior:'smooth',block:'start'});
-    const signMode=$('signatureMode'); if(signMode){ signMode.addEventListener('change',updateSignatureMode); updateSignatureMode(); setupSignaturePad(); $('signatureName').addEventListener('input',updatePlacementOverlay); $('signatureStyle').addEventListener('change',updatePlacementOverlay); $('signatureColor').addEventListener('input',updatePlacementOverlay); $('signatureWidth').addEventListener('input',updatePlacementOverlay); }
-    if($('textToAdd')){ $('textToAdd').addEventListener('input',updatePlacementOverlay); $('textFontSize').addEventListener('input',updatePlacementOverlay); $('textColor').addEventListener('input',updatePlacementOverlay); }
-    if($('signatureUpload')) $('signatureUpload').addEventListener('change',e=>{ state.signatureImageFile=e.target.files[0]||null; updatePlacementOverlay(); });
+    const signMode=$('signatureMode');
+    if(signMode){
+      state.savedSignatures=readSavedSignatures();
+      populateSavedSignatures();
+      signMode.addEventListener('change',updateSignatureMode); updateSignatureMode(); setupSignaturePad();
+      $('signatureName').addEventListener('input',()=>updatePlacementOverlay()); $('signatureStyle').addEventListener('change',()=>updatePlacementOverlay()); $('signatureColor').addEventListener('input',()=>updatePlacementOverlay());
+      $('signatureWidth').addEventListener('input',()=>updatePlacementOverlay());
+      $('signatureUpload').addEventListener('change',e=>{ state.signatureImageFile=e.target.files[0]||null; updatePlacementOverlay(); });
+      $('savedSignatureSelect').addEventListener('change',()=>{state.selectedSavedSignatureId=$('savedSignatureSelect').value;updatePlacementOverlay();});
+      $('saveSignatureButton').addEventListener('click',saveCurrentSignature);
+      $('deleteSavedSignatureButton').addEventListener('click',deleteSelectedSignature);
+    }
+    if($('textToAdd')){
+      $('textToAdd').addEventListener('input',()=>{const item=getSelectedPageItem();if(item&&item.type==='text'){item.text=$('textToAdd').value;updatePageItemNode(item);}});
+      ['textFontSize','textColor','textFontFamily','coverExistingText'].forEach(id=>$(id).addEventListener('input',syncSelectedTextItem));
+      ['textFontFamily','coverExistingText'].forEach(id=>$(id).addEventListener('change',syncSelectedTextItem));
+    }
     $('closeWorkbench').focus({preventScroll:true}); setStatus('Choose your file(s) to begin.');
   }
   function updateSignatureMode() {
     const mode=$('signatureMode')?.value||'typed';
-    $('typedSignatureFields').hidden=mode!=='typed'; $('drawSignatureFields').hidden=mode!=='draw'; $('uploadSignatureFields').hidden=mode!=='upload';
+    $('typedSignatureFields').hidden=mode!=='typed'; $('drawSignatureFields').hidden=mode!=='draw'; $('uploadSignatureFields').hidden=mode!=='upload'; $('savedSignatureFields').hidden=mode!=='saved';
+    $('saveSignatureButton').hidden=mode==='saved';
     updatePlacementOverlay();
+  }
+  function readSavedSignatures() {
+    try { const saved=JSON.parse(localStorage.getItem('eaziply_saved_signatures')||'[]'); return Array.isArray(saved)?saved.filter(x=>x&&x.id&&x.dataUrl).slice(0,8):[]; }
+    catch { return []; }
+  }
+  function writeSavedSignatures() {
+    try { localStorage.setItem('eaziply_saved_signatures',JSON.stringify(state.savedSignatures)); return true; }
+    catch { setStatus('The browser could not save this signature. Its local storage may be full.','error'); return false; }
+  }
+  function populateSavedSignatures() {
+    const select=$('savedSignatureSelect'); if(!select)return;
+    const wanted=state.selectedSavedSignatureId||'';
+    select.innerHTML='<option value="">Choose a saved signature</option>';
+    state.savedSignatures.forEach(sig=>{const option=document.createElement('option');option.value=sig.id;option.textContent=sig.name||'Saved signature';select.appendChild(option);});
+    if(state.savedSignatures.some(sig=>sig.id===wanted))select.value=wanted;
+    else if(state.savedSignatures.length){select.value=state.savedSignatures[0].id;state.selectedSavedSignatureId=select.value;}
+    $('deleteSavedSignatureButton').disabled=!state.savedSignatures.length;
+  }
+  function selectedSavedSignature() { const select=$('savedSignatureSelect'); const id=select?select.value:state.selectedSavedSignatureId; return state.savedSignatures.find(sig=>sig.id===id)||null; }
+  function dataUrlBytes(dataUrl) {
+    const base64=(dataUrl||'').split(',')[1]; if(!base64)throw new Error('Signature image data is not available.');
+    const binary=atob(base64);const bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return bytes;
+  }
+  function typedSignatureDataUrl() {
+    const text=getOption('signatureName','').trim();if(!text)throw new Error('Enter your name for the signature first.');
+    const style=getOption('signatureStyle','brush');const color=getOption('signatureColor','#17213f');
+    const styles={brush:'italic 86px "Brush Script MT", "Segoe Script", cursive',elegant:'italic 82px "Segoe Print", "Comic Sans MS", cursive',classic:'italic 78px Georgia, serif',modern:'italic 76px "Trebuchet MS", sans-serif',hand:'76px "Comic Sans MS", cursive',bold:'bold italic 76px "Segoe Script", cursive'};
+    const canvas=document.createElement('canvas');canvas.width=1400;canvas.height=190;let ctx=canvas.getContext('2d');ctx.font=styles[style]||styles.brush;const measured=ctx.measureText(text);canvas.width=Math.max(300,Math.min(1400,Math.ceil(measured.width+55)));ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.font=styles[style]||styles.brush;ctx.fillStyle=color;ctx.textBaseline='middle';ctx.fillText(text,20,98,canvas.width-40);return canvas.toDataURL('image/png');
+  }
+  async function uploadedSignatureDataUrl(file) {
+    if(!file)throw new Error('Choose a signature image first.');
+    const source=await new Promise((resolve,reject)=>{const img=new Image();const url=URL.createObjectURL(file);img.onload=()=>{URL.revokeObjectURL(url);resolve(img);};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Could not open the signature image.'));};img.src=url;});
+    const scale=Math.min(1,600/source.naturalWidth,180/source.naturalHeight);const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(source.naturalWidth*scale));canvas.height=Math.max(1,Math.round(source.naturalHeight*scale));canvas.getContext('2d').drawImage(source,0,0,canvas.width,canvas.height);return canvas.toDataURL('image/png');
+  }
+  async function currentSignatureDataUrl() {
+    const mode=getOption('signatureMode','typed');
+    if(mode==='saved'){const sig=selectedSavedSignature();if(!sig)throw new Error('Choose a saved signature first.');return sig.dataUrl;}
+    if(mode==='draw'){const pad=$('signaturePad');if(!state.signatureDrawn)throw new Error('Draw your signature in the signature box first.');return pad.toDataURL('image/png');}
+    if(mode==='upload')return await uploadedSignatureDataUrl(state.signatureImageFile);
+    return typedSignatureDataUrl();
+  }
+  async function saveCurrentSignature() {
+    try {
+      const dataUrl=await currentSignatureDataUrl();
+      const mode=getOption('signatureMode','typed');
+      const name=mode==='typed'?getOption('signatureName','').trim():(mode==='upload'?(state.signatureImageFile?.name||'Uploaded signature'):'Drawn signature');
+      const entry={id:`sig-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name:name.slice(0,80),dataUrl,createdAt:new Date().toISOString()};
+      state.savedSignatures=readSavedSignatures();state.savedSignatures.unshift(entry);state.savedSignatures=state.savedSignatures.slice(0,8);
+      if(!writeSavedSignatures())return;
+      state.selectedSavedSignatureId=entry.id;populateSavedSignatures();$('signatureMode').value='saved';updateSignatureMode();
+      setStatus('Signature saved on this device. You can reuse it in future Eaziply visits.','success');toast('Signature saved for reuse.');
+    } catch(err){setStatus(err.message||'Could not save this signature.','error');}
+  }
+  function deleteSelectedSignature() {
+    const sig=selectedSavedSignature();if(!sig)return;
+    state.savedSignatures=state.savedSignatures.filter(item=>item.id!==sig.id);state.selectedSavedSignatureId='';writeSavedSignatures();populateSavedSignatures();updatePlacementOverlay();setStatus('Saved signature deleted from this browser.','success');
   }
   function setupSignaturePad() {
     const canvas=$('signaturePad'); if(!canvas) return;
@@ -102,8 +191,8 @@
     wrap.hidden=!state.files.length;
   }
   async function onFilesChanged(files) {
-    state.files=Array.from(files||[]); state.previewDoc=null;state.previewFile=null;state.pdfPage=1;state.pageCount=0;state.signatureImageFile=null;state.position={x:.43,y:.62};state.positionSet=false;
-    fileListText();
+    clearPageObserver(); state.files=Array.from(files||[]); state.previewDoc=null;state.previewFile=null;state.pdfPage=1;state.pageCount=0;state.signatureImageFile=null;state.position={x:.43,y:.62};state.positionSet=false;state.pageItems=[];state.selectedItemId=null;
+    fileListText(); $('continuousPages').innerHTML=''; $('continuousPages').hidden=true; $('pdfStage').hidden=false; $('pdfStageWrap').classList.remove('is-continuous');
     if(state.files.some(f=>f.size>80*1024*1024)){setStatus('Each file must be 80 MB or smaller for this browser-based version.','error');$('runTool').disabled=true;return;}
     if(state.files.reduce((sum,f)=>sum+f.size,0)>150*1024*1024){setStatus('This selection is over 150 MB total. Process fewer or smaller files to avoid running out of browser memory.','error');$('runTool').disabled=true;return;}
     if(!state.files.length){$('runTool').disabled=true;return;}
@@ -111,65 +200,161 @@
     if(!['images-to-pdf'].includes(state.tool) && state.files.some(f=>!isPdf(f))){setStatus('This tool needs PDF files. Please select a PDF.','error');$('runTool').disabled=true;return;}
     if(state.tool==='images-to-pdf' && state.files.some(f=>!f.type.startsWith('image/'))){setStatus('Please select image files only.','error');$('runTool').disabled=true;return;}
     $('runTool').disabled=false;
-    const totalBytes=state.files.reduce((sum,f)=>sum+f.size,0);
-    setStatus(`${state.files.length} file(s) selected · ${humanBytes(totalBytes)} total.`);
+    const totalBytes=state.files.reduce((sum,f)=>sum+f.size,0);setStatus(`${state.files.length} file(s) selected · ${humanBytes(totalBytes)} total.`);
     if(state.files[0] && isPdf(state.files[0])) {
       try {
-        setStatus('Loading PDF preview…','busy');
-        state.previewFile=state.files[0]; state.previewDoc=await loadPdfJs(state.previewFile); state.pageCount=state.previewDoc.numPages;
-        $('pageControls').hidden=false; updatePageControls(); await renderCurrentPage();
+        setStatus('Loading PDF preview…','busy');state.previewFile=state.files[0];state.previewDoc=await loadPdfJs(state.previewFile);state.pageCount=state.previewDoc.numPages;
+        state.continuousView=['sign','add-text'].includes(state.tool);
+        $('pageControls').hidden=false;updatePageControls();$('pdfStageWrap').hidden=false;$('previewEmpty').hidden=true;
+        if(state.continuousView){
+          $('pdfStage').hidden=true;$('continuousPages').hidden=false;$('pdfStageWrap').classList.add('is-continuous');$('previewHeader').classList.add('is-sticky-page-controls');$('workbench').querySelector('.workbench-card').classList.add('is-continuous');
+          await renderContinuousPages();
+        } else {
+          $('continuousPages').hidden=true;$('pdfStage').hidden=false;$('pdfStageWrap').classList.remove('is-continuous');$('previewHeader').classList.remove('is-sticky-page-controls');$('workbench').querySelector('.workbench-card').classList.remove('is-continuous');await renderCurrentPage();
+        }
         $('previewMeta').textContent=`${state.pageCount} page(s) · ${humanBytes(state.previewFile.size)}`;
-        setStatus(`${state.files.length} file(s) selected. PDF preview is ready.`,'success');
+        setStatus(`${state.files.length} file(s) selected. ${state.continuousView?'Continuous multi-page preview':'PDF preview'} is ready.`,'success');
       } catch(err) {
-        $('previewEmpty').hidden=false;$('pdfStageWrap').hidden=true;$('pageControls').hidden=true;
-        setStatus(`File selected, but preview failed: ${humanError(err)}`,'error');
+        $('previewEmpty').hidden=false;$('pdfStageWrap').hidden=true;$('pageControls').hidden=true;setStatus(`File selected, but preview failed: ${humanError(err)}`,'error');
       }
     } else {
       $('previewEmpty').hidden=false;$('pdfStageWrap').hidden=true;$('pageControls').hidden=true;
-      $('previewEmpty').querySelector('strong').textContent='Image files selected';
-      $('previewEmpty').querySelector('span:last-child').textContent='The selected images will be placed into a PDF in the order shown on the left.';
-      $('previewMeta').textContent=`${state.files.length} image(s) · ${humanBytes(totalBytes)}`;
-      setStatus(`${state.files.length} image(s) ready to combine into PDF.`,'success');
+      $('previewEmpty').querySelector('strong').textContent='Image files selected';$('previewEmpty').querySelector('span:last-child').textContent='The selected images will be placed into a PDF in the order shown on the left.';
+      $('previewMeta').textContent=`${state.files.length} image(s) · ${humanBytes(totalBytes)}`;setStatus(`${state.files.length} image(s) ready to combine into PDF.`,'success');
     }
     updatePlacementOverlay();
   }
-  function updatePageControls() { $('pageIndicator').textContent=`${state.pdfPage} / ${state.pageCount||1}`; $('prevPage').disabled=state.pdfPage<=1; $('nextPage').disabled=state.pdfPage>=state.pageCount; }
+  function updatePageControls() {
+    const total=state.pageCount||1;const input=$('pageJumpInput');input.max=String(total);input.value=String(Math.min(total,Math.max(1,state.pdfPage||1)));
+    $('pageCountLabel').textContent=String(total);$('prevPage').disabled=state.pdfPage<=1;$('nextPage').disabled=state.pdfPage>=total;
+  }
+  async function jumpToPage(value) {
+    if(!state.previewDoc)return;const page=Math.max(1,Math.min(state.pageCount,Math.floor(Number(value)||1)));state.pdfPage=page;updatePageControls();
+    if(state.continuousView){const target=$(`continuousPage${page}`);if(target)target.scrollIntoView({behavior:'smooth',block:'start'});const canvas=target?.querySelector('canvas');if(canvas&&!canvas.dataset.rendered)renderContinuousPage(page);}
+    else await renderCurrentPage();
+  }
   async function renderCurrentPage() {
     if(!state.previewDoc) return;
-    const page=await state.previewDoc.getPage(state.pdfPage);
-    const base=page.getViewport({scale:1}); const maxWidth=Math.max(260,Math.min(720,($('previewColumn')?.clientWidth||780)-65));
-    const scale=Math.min(maxWidth/base.width,1.4); state.viewScale=scale; state.previewPageWidth=base.width; const viewport=page.getViewport({scale});
+    const page=await state.previewDoc.getPage(state.pdfPage);const base=page.getViewport({scale:1});const maxWidth=Math.max(180,Math.min(720,($('previewColumn')?.clientWidth||780)-40));
+    const scale=Math.min(maxWidth/base.width,1.4);state.viewScale=scale;state.previewPageWidth=base.width;const viewport=page.getViewport({scale});
     const canvas=$('pdfCanvas');canvas.width=Math.floor(viewport.width);canvas.height=Math.floor(viewport.height);canvas.style.width=`${Math.floor(viewport.width)}px`;canvas.style.height=`${Math.floor(viewport.height)}px`;
-    const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
-    await page.render({canvasContext:ctx,viewport}).promise;
-    $('previewEmpty').hidden=true;$('pdfStageWrap').hidden=false;$('pdfStage').style.width=`${canvas.width}px`;$('pdfStage').style.height=`${canvas.height}px`;
+    const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);await page.render({canvasContext:ctx,viewport}).promise;
+    $('previewEmpty').hidden=true;$('pdfStageWrap').hidden=false;$('pdfStage').hidden=false;$('continuousPages').hidden=true;$('pdfStageWrap').classList.remove('is-continuous');$('pdfStage').style.width=`${canvas.width}px`;$('pdfStage').style.height=`${canvas.height}px`;
     updatePageControls();updatePlacementOverlay();
+  }
+  async function renderContinuousPages() {
+    const container=$('continuousPages');container.innerHTML='';clearPageObserver();
+    const maxWidth=Math.max(180,Math.min(700,($('previewColumn')?.clientWidth||780)-32));
+    for(let number=1;number<=state.pageCount;number++){
+      const page=await state.previewDoc.getPage(number);const base=page.getViewport({scale:1});const scale=Math.min(maxWidth/base.width,1.25);const viewport=page.getViewport({scale});
+      const card=document.createElement('article');card.className='pdf-page-item';card.id=`continuousPage${number}`;card.dataset.pageNumber=String(number);
+      const label=document.createElement('div');label.className='pdf-page-label';label.innerHTML=`<strong>Page ${number}</strong><span>${Math.round(base.width)} × ${Math.round(base.height)} pt</span>`;
+      const surface=document.createElement('div');surface.className='pdf-page-surface';surface.dataset.pageNumber=String(number);surface.dataset.scale=String(scale);surface.style.width=`${Math.floor(viewport.width)}px`;surface.style.height=`${Math.floor(viewport.height)}px`;
+      surface.dataset.canvasWidth=String(Math.floor(viewport.width));surface.dataset.canvasHeight=String(Math.floor(viewport.height));
+      const placeholder=document.createElement('div');placeholder.className='pdf-page-canvas-placeholder';placeholder.setAttribute('aria-label',`Preview placeholder for page ${number}`);
+      const layer=document.createElement('div');layer.className='page-overlay-layer';layer.dataset.pageNumber=String(number);
+      surface.append(placeholder,layer);card.append(label,surface);container.appendChild(card);
+      surface.addEventListener('click',e=>handlePagePlacementClick(e,number,surface));renderPageItems(number);
+    }
+    if('IntersectionObserver' in window){
+      state.pageObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>{const n=Number(entry.target.dataset.pageNumber);if(entry.isIntersecting){renderContinuousPage(n);}else{const r=entry.target.getBoundingClientRect();const distance=r.top>window.innerHeight?r.top-window.innerHeight:(r.bottom<0?-r.bottom:0);if(distance>700)unloadContinuousPage(n);}});},{root:null,rootMargin:'850px 0px'});
+      container.querySelectorAll('.pdf-page-item').forEach(card=>state.pageObserver.observe(card));
+    } else {
+      for(let number=1;number<=state.pageCount;number++)await renderContinuousPage(number);
+    }
+    updatePageControls();
+  }
+  async function renderContinuousPage(number) {
+    const card=$(`continuousPage${number}`);const surface=card?.querySelector('.pdf-page-surface');
+    if(!surface||surface.dataset.rendered==='true'||state.pageRenderJobs.has(number))return;
+    const job=(async()=>{let canvas=null;try{
+      const page=await state.previewDoc.getPage(number);const base=page.getViewport({scale:1});const maxWidth=Math.max(180,Math.min(700,($('previewColumn')?.clientWidth||780)-32));const scale=Math.min(maxWidth/base.width,1.25);const viewport=page.getViewport({scale});
+      const width=Number(surface.dataset.canvasWidth)||Math.floor(viewport.width);const height=Number(surface.dataset.canvasHeight)||Math.floor(viewport.height);
+      canvas=document.createElement('canvas');canvas.className='pdf-page-canvas';canvas.width=width;canvas.height=height;canvas.style.width=`${width}px`;canvas.style.height=`${height}px`;canvas.dataset.rendered='false';
+      const layer=surface.querySelector('.page-overlay-layer');surface.insertBefore(canvas,layer||null);
+      const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);await page.render({canvasContext:ctx,viewport}).promise;canvas.dataset.rendered='true';surface.dataset.rendered='true';surface.querySelector('.pdf-page-canvas-placeholder')?.remove();
+    }catch(err){if(canvas){canvas.width=0;canvas.height=0;canvas.remove();}const layer=surface.querySelector('.page-overlay-layer');if(layer&&!layer.querySelector('.page-render-error')){const msg=document.createElement('div');msg.className='page-render-error';msg.textContent='Preview could not render this page. You can still try to process the PDF.';layer.appendChild(msg);}}finally{state.pageRenderJobs.delete(number);}})();state.pageRenderJobs.set(number,job);await job;
+  }
+  function unloadContinuousPage(number) {
+    if(state.pageRenderJobs.has(number))return;const card=$(`continuousPage${number}`);const surface=card?.querySelector('.pdf-page-surface');const canvas=surface?.querySelector('canvas.pdf-page-canvas');
+    if(!surface||!canvas||canvas.dataset.rendered!=='true')return;
+    canvas.width=0;canvas.height=0;canvas.remove();surface.dataset.rendered='false';
+    if(!surface.querySelector('.pdf-page-canvas-placeholder')){const placeholder=document.createElement('div');placeholder.className='pdf-page-canvas-placeholder';placeholder.setAttribute('aria-label',`Preview placeholder for page ${number}`);surface.insertBefore(placeholder,surface.querySelector('.page-overlay-layer')||null);}
+  }
+  function updateCurrentPageFromScroll() {
+    if(!state.continuousView)return;const cards=[...$('continuousPages').querySelectorAll('.pdf-page-item')];if(!cards.length)return;
+    const anchor=155;let active=cards[0];for(const card of cards){const r=card.getBoundingClientRect();if(r.top<=anchor)active=card;else break;}
+    const next=Number(active.dataset.pageNumber)||1;if(next!==state.pdfPage){state.pdfPage=next;updatePageControls();}
   }
   function getOption(id, fallback='') { const el=$(id);return el?el.value:fallback; }
   function updatePlacementOverlay() {
-    const overlay=$('placementOverlay'); if(!overlay || !state.tool || !['sign','add-text'].includes(state.tool) || !state.previewDoc || $('pdfStageWrap').hidden){if(overlay)overlay.hidden=true;return;}
-    overlay.hidden=false;overlay.style.left=`${Math.max(0,Math.min(.95,state.position.x))*100}%`;overlay.style.top=`${Math.max(0,Math.min(.95,state.position.y))*100}%`;overlay.style.transform='translate(0, 0)';overlay.style.width='auto';overlay.style.height='auto';overlay.style.background='rgba(255,255,255,.42)';overlay.style.border='1px dashed rgba(101,85,232,.65)';overlay.replaceChildren();overlay.classList.remove('is-image');
-    const viewScale=state.viewScale||1;
-    const styleFor=key=>({brush:'italic "Brush Script MT", "Segoe Script", cursive',elegant:'italic "Segoe Print", "Comic Sans MS", cursive',classic:'italic Georgia, serif',modern:'italic "Trebuchet MS", sans-serif',hand:'"Comic Sans MS", cursive',bold:'bold italic "Segoe Script", cursive'}[key]||'cursive');
-    if(state.tool==='sign') {
-      const mode=getOption('signatureMode','typed');
-      if(mode==='typed') { const name=getOption('signatureName','Your Name').trim()||'Your Name'; overlay.textContent=name; const fs=Math.max(10,Number(getOption('signatureWidth','150'))*.22*viewScale); overlay.style.fontFamily=styleFor(getOption('signatureStyle','brush')); overlay.style.fontStyle='italic';overlay.style.fontSize=`${fs}px`;overlay.style.color=getOption('signatureColor','#17213f'); }
-      else if(mode==='draw') {const c=$('signaturePad');if(c && state.signatureDrawn){const img=document.createElement('img');img.src=c.toDataURL('image/png');img.alt='Signature preview';img.style.width=`${Math.min(340,Number(getOption('signatureWidth','150'))*viewScale)}px`;img.style.height='auto';overlay.appendChild(img);overlay.classList.add('is-image');}else{overlay.textContent='Draw signature first';overlay.style.fontSize='13px';overlay.style.color='#8a90a4';}}
-      else if(mode==='upload') { const f=state.signatureImageFile;if(f){const img=document.createElement('img');img.src=URL.createObjectURL(f);img.alt='Uploaded signature preview';img.style.width=`${Math.min(340,Number(getOption('signatureWidth','150'))*viewScale)}px`;img.style.height='auto';overlay.appendChild(img);overlay.classList.add('is-image');}else{overlay.textContent='Upload signature first';overlay.style.fontSize='12px';overlay.style.color='#8a90a4';}}
+    const overlay=$('placementOverlay');if(!overlay)return;
+    if(state.continuousView){overlay.hidden=true;return;}
+    overlay.hidden=true;
+  }
+  function getSelectedPageItem(){return state.pageItems.find(item=>item.id===state.selectedItemId)||null;}
+  function itemNode(id){return document.querySelector(`[data-overlay-item="${CSS.escape(String(id))}"]`);}
+  function applyItemAppearance(item,node){
+    if(!node)return;node.style.left=`${item.x*100}%`;node.style.top=`${item.y*100}%`;node.style.width=`${Math.max(.06,Math.min(.9,item.w))*100}%`;
+    if(item.type==='text'){node.style.height=`${Math.max(.035,Math.min(.7,item.h||.1))*100}%`;const content=node.querySelector('.overlay-text-content');if(content){const scale=Number(node.closest('.pdf-page-surface')?.dataset.scale||1);content.style.fontSize=`${Math.max(6,Math.min(72,item.fontSize||12))*scale}px`;content.style.color=item.color||'#111827';content.style.fontFamily=({helvetica:'Arial, sans-serif',times:'Georgia, serif',courier:'Courier New, monospace'}[item.fontFamily]||'Arial, sans-serif');}}
+    else {node.style.height='auto';const img=node.querySelector('.overlay-signature-image');if(img)img.style.width='100%';}
+    node.classList.toggle('is-selected',item.id===state.selectedItemId);
+  }
+  function updatePageItemNode(item){const node=itemNode(item.id);applyItemAppearance(item,node);if(item.type==='text'){const content=node?.querySelector('.overlay-text-content');if(content&&content.textContent!==item.text)content.textContent=item.text||'';}}
+  function renderPageItems(pageNumber){
+    const layer=document.querySelector(`.page-overlay-layer[data-page-number="${pageNumber}"]`);if(!layer)return;layer.innerHTML='';
+    state.pageItems.filter(item=>item.page===pageNumber).forEach(item=>{
+      const node=document.createElement('div');node.className=`pdf-overlay-item ${item.type==='signature'?'signature-overlay-item':'text-overlay-item'}`;node.dataset.overlayItem=String(item.id);node.dataset.pageNumber=String(pageNumber);
+      const toolbar=document.createElement('div');toolbar.className='overlay-item-toolbar';
+      const handle=document.createElement('button');handle.type='button';handle.className='overlay-drag-handle';handle.title='Drag to move';handle.setAttribute('aria-label','Move item');handle.textContent='⠿';
+      const remove=document.createElement('button');remove.type='button';remove.className='overlay-delete-button';remove.title='Remove item';remove.setAttribute('aria-label','Remove item');remove.textContent='×';
+      toolbar.append(handle,remove);node.appendChild(toolbar);
+      if(item.type==='signature'){const img=document.createElement('img');img.className='overlay-signature-image';img.src=item.dataUrl;img.alt='Signature preview';node.appendChild(img);}
+      else {const content=document.createElement('div');content.className='overlay-text-content';content.contentEditable='true';content.spellcheck=false;content.setAttribute('role','textbox');content.setAttribute('aria-label','Text to place on PDF');content.dataset.placeholder='Type your text';content.textContent=item.text||'';content.addEventListener('focus',()=>selectPageItem(item.id));content.addEventListener('input',()=>{item.text=content.innerText.replace(/\r/g,'');if(state.selectedItemId===item.id&&$('textToAdd'))$('textToAdd').value=item.text;});content.addEventListener('paste',e=>{e.preventDefault();const text=(e.clipboardData||window.clipboardData).getData('text/plain');document.execCommand('insertText',false,text);});node.appendChild(content);}
+      const resize=document.createElement('button');resize.type='button';resize.className='overlay-resize-handle';resize.title='Resize item';resize.setAttribute('aria-label','Resize item');node.appendChild(resize);
+      node.addEventListener('pointerdown',e=>{if(e.target.closest('.overlay-delete-button'))return;selectPageItem(item.id);});
+      handle.addEventListener('pointerdown',e=>startItemPointerAction(e,item,node,'move'));
+      resize.addEventListener('pointerdown',e=>startItemPointerAction(e,item,node,'resize'));
+      remove.addEventListener('click',e=>{e.stopPropagation();state.pageItems=state.pageItems.filter(x=>x.id!==item.id);if(state.selectedItemId===item.id)state.selectedItemId=null;renderPageItems(pageNumber);setStatus('Item removed from page.','success');});
+      layer.appendChild(node);applyItemAppearance(item,node);
+    });
+  }
+  function selectPageItem(id){
+    state.selectedItemId=id;const item=getSelectedPageItem();if(!item)return;
+    document.querySelectorAll('.pdf-overlay-item').forEach(node=>node.classList.toggle('is-selected',node.dataset.overlayItem===String(id)));
+    if(item.type==='text'&&$('textToAdd')){$('textToAdd').value=item.text||'';$('textFontSize').value=String(item.fontSize||12);$('textColor').value=item.color||'#111827';$('textFontFamily').value=item.fontFamily||'helvetica';$('coverExistingText').checked=!!item.cover;}
+  }
+  function syncSelectedTextItem(){
+    const item=getSelectedPageItem();if(!item||item.type!=='text')return;
+    item.fontSize=Math.max(6,Math.min(72,Number(getOption('textFontSize','12'))||12));item.color=getOption('textColor','#111827');item.fontFamily=getOption('textFontFamily','helvetica');item.cover=$('coverExistingText').checked;updatePageItemNode(item);
+  }
+  function startItemPointerAction(event,item,node,action){
+    event.preventDefault();event.stopPropagation();selectPageItem(item.id);const surface=node.closest('.pdf-page-surface');if(!surface)return;const rect=surface.getBoundingClientRect();const start={x:event.clientX,y:event.clientY,itemX:item.x,itemY:item.y,w:item.w,h:item.h||.1};
+    const move=e=>{if(action==='move'){item.x=Math.max(0,Math.min(.94,start.itemX+(e.clientX-start.x)/rect.width));item.y=Math.max(0,Math.min(.96,start.itemY+(e.clientY-start.y)/rect.height));}
+      else {item.w=Math.max(.07,Math.min(.9,start.w+(e.clientX-start.x)/rect.width));if(item.type==='text')item.h=Math.max(.045,Math.min(.7,start.h+(e.clientY-start.y)/rect.height));}
+      applyItemAppearance(item,node);};
+    const stop=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',stop);window.removeEventListener('pointercancel',stop);};
+    window.addEventListener('pointermove',move);window.addEventListener('pointerup',stop,{once:true});window.addEventListener('pointercancel',stop,{once:true});
+  }
+  async function handlePagePlacementClick(event,pageNumber,surface){
+    if(!state.tool||!['sign','add-text'].includes(state.tool)||!state.continuousView)return;
+    if(event.target.closest('.pdf-overlay-item'))return;
+    const rect=surface.getBoundingClientRect();const x=Math.max(0,Math.min(.94,(event.clientX-rect.left)/rect.width));const y=Math.max(0,Math.min(.96,(event.clientY-rect.top)/rect.height));
+    if(state.tool==='sign'){
+      try{const dataUrl=await currentSignatureDataUrl();const pdfPage=await state.previewDoc.getPage(pageNumber);const widthPt=Math.max(35,Math.min(400,Number(getOption('signatureWidth','150'))||150));const w=Math.max(.07,Math.min(.85,widthPt/pdfPage.getViewport({scale:1}).width));
+        const item={id:++state.itemCounter,type:'signature',page:pageNumber,x,y,w,dataUrl};state.pageItems.push(item);state.selectedItemId=item.id;renderPageItems(pageNumber);setStatus(`Signature placed on page ${pageNumber}. Add another signature or drag/resize this one.`,'success');
+      }catch(err){setStatus(err.message||'Choose or create a signature first.','error');}
     } else {
-      const text=getOption('textToAdd','')||'Your text';overlay.textContent=text.split('\n')[0];overlay.style.whiteSpace='pre';overlay.style.fontFamily='Arial, sans-serif';overlay.style.fontStyle='normal';overlay.style.fontSize=`${Math.max(8,Number(getOption('textFontSize','12'))*viewScale)}px`;overlay.style.color=getOption('textColor','#111827');
+      const text=getOption('textToAdd','');const item={id:++state.itemCounter,type:'text',page:pageNumber,x,y,w:.38,h:.09,text,fontSize:Math.max(6,Math.min(72,Number(getOption('textFontSize','12'))||12)),color:getOption('textColor','#111827'),fontFamily:getOption('textFontFamily','helvetica'),cover:!!$('coverExistingText')?.checked};
+      state.pageItems.push(item);state.selectedItemId=item.id;renderPageItems(pageNumber);selectPageItem(item.id);setStatus(`Editable text box added to page ${pageNumber}. Type in the box on the page or in the text field.`,'success');
+      const content=itemNode(item.id)?.querySelector('.overlay-text-content');content?.focus();
     }
   }
   function setupPlacementEvents() {
     $('pdfCanvas').addEventListener('click',e=>{
-      if(!state.tool||!['sign','add-text'].includes(state.tool)||!state.previewDoc)return;
+      if(!state.tool||!['sign','add-text'].includes(state.tool)||!state.previewDoc||state.continuousView)return;
       const r=$('pdfCanvas').getBoundingClientRect();state.position={x:Math.max(0,Math.min(.94,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(.94,(e.clientY-r.top)/r.height))};state.positionSet=true;updatePlacementOverlay();
-      setStatus(`Placement set on preview page ${state.pdfPage}. Drag the preview item to adjust it.`,'success');
     });
-    const overlay=$('placementOverlay');let drag=null;
-    overlay.addEventListener('pointerdown',e=>{if(overlay.hidden||!state.tool||!['sign','add-text'].includes(state.tool))return;drag={x:e.clientX,y:e.clientY,px:state.position.x,py:state.position.y};overlay.setPointerCapture(e.pointerId);e.preventDefault();});
-    overlay.addEventListener('pointermove',e=>{if(!drag)return;const r=$('pdfCanvas').getBoundingClientRect();state.position.x=Math.max(0,Math.min(.92,drag.px+(e.clientX-drag.x)/r.width));state.position.y=Math.max(0,Math.min(.92,drag.py+(e.clientY-drag.y)/r.height));updatePlacementOverlay();});
-    const stop=()=>{drag=null;};overlay.addEventListener('pointerup',stop);overlay.addEventListener('pointercancel',stop);
   }
   function humanError(err) {
     const msg=String(err?.message||err||'Unknown error');
@@ -178,20 +363,7 @@
     return msg.length>240?msg.slice(0,237)+'…':msg;
   }
   function hexRgb(hex) { const v=(hex||'#111827').replace('#','');const n=parseInt(v.length===3?v.split('').map(c=>c+c).join(''):v,16);return PDFLib.rgb(((n>>16)&255)/255,((n>>8)&255)/255,(n&255)/255); }
-  async function getSignaturePng() {
-    const mode=getOption('signatureMode','typed');
-    if(mode==='draw') {
-      const pad=$('signaturePad');if(!state.signatureDrawn)throw new Error('Draw your signature in the signature box first.');
-      const c=document.createElement('canvas');c.width=pad.width;c.height=pad.height;const ctx=c.getContext('2d');ctx.drawImage(pad,0,0);return new Uint8Array(await (await fetch(c.toDataURL('image/png'))).arrayBuffer());
-    }
-    if(mode==='upload') {
-      const file=state.signatureImageFile;if(!file)throw new Error('Choose a signature image first.');return await imageFileToPngBytes(file);
-    }
-    const text=getOption('signatureName','').trim();if(!text)throw new Error('Enter your name for the signature.');
-    const style=getOption('signatureStyle','brush');const color=getOption('signatureColor','#17213f');
-    const styles={brush:'italic 86px "Brush Script MT", "Segoe Script", cursive',elegant:'italic 82px "Segoe Print", "Comic Sans MS", cursive',classic:'italic 78px Georgia, serif',modern:'italic 76px "Trebuchet MS", sans-serif',hand:'76px "Comic Sans MS", cursive',bold:'bold italic 76px "Segoe Script", cursive'};
-    const canvas=document.createElement('canvas');canvas.width=1400;canvas.height=190;let ctx=canvas.getContext('2d');ctx.font=styles[style]||styles.brush;const measure=ctx.measureText(text);canvas.width=Math.max(300,Math.min(1400,Math.ceil(measure.width+55)));ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.font=styles[style]||styles.brush;ctx.fillStyle=color;ctx.textBaseline='middle';ctx.fillText(text,20,98,canvas.width-40);return new Uint8Array(await (await fetch(canvas.toDataURL('image/png'))).arrayBuffer());
-  }
+  async function getSignaturePng() { return dataUrlBytes(await currentSignatureDataUrl()); }
   async function imageFileToPngBytes(file) {
     if(file.type==='image/png')return new Uint8Array(await file.arrayBuffer());
     const blob=await new Promise((resolve,reject)=>{const img=new Image();const url=URL.createObjectURL(file);img.onload=()=>{const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);URL.revokeObjectURL(url);c.toBlob(b=>b?resolve(b):reject(new Error('Could not convert signature image.')),'image/png');};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Could not open the signature image.'));};img.src=url;});return new Uint8Array(await blob.arrayBuffer());
@@ -201,16 +373,34 @@
     const blob=await new Promise((resolve,reject)=>{const img=new Image();const url=URL.createObjectURL(file);img.onload=()=>{const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0);URL.revokeObjectURL(url);c.toBlob(b=>b?resolve(b):reject(new Error('Could not convert this image format.')),'image/jpeg',quality);};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Could not open an image.'));};img.src=url;});return new Uint8Array(await blob.arrayBuffer());
   }
   async function handleSignOrText(pdfFile, tool) {
-    const doc=await loadPdfLib(pdfFile);const pages=doc.getPages();const selected=parsePageRanges(getOption('pageRange',tool==='sign'?'1':'1'),pages.length);const sourcePages=tool==='sign'?selected:selected;
-    const xPct=state.position.x, yPct=state.position.y;
-    if(tool==='sign'){
-      const pngBytes=await getSignaturePng();const img=await doc.embedPng(pngBytes);const firstPage=pages[Math.max(0,(state.pdfPage||1)-1)];const w=Math.min(400,Math.max(35,Number(getOption('signatureWidth','150'))||150));const h=w*(img.height/img.width);
-      for(const one of sourcePages){const p=pages[one-1];const drawW=Math.min(w,p.getWidth()*.9);const drawH=drawW*(img.height/img.width);const x=Math.max(0,Math.min(p.getWidth()-drawW,xPct*p.getWidth()));const top=Math.max(0,Math.min(p.getHeight()-drawH,yPct*p.getHeight()));p.drawImage(img,{x,y:p.getHeight()-top-drawH,width:drawW,height:drawH});}
+    const doc=await loadPdfLib(pdfFile);const pages=doc.getPages();const total=pages.length;const raw=(getOption('pageRange','placed')||'placed').trim().toLowerCase();
+    const allItems=state.pageItems.filter(item=>item.type===(tool==='sign'?'signature':'text')&&(tool==='sign'||(item.text||'').trim()));
+    let jobs=[];
+    if(raw==='placed'){
+      jobs=allItems.map(item=>({page:item.page,item}));
+      if(!jobs.length)throw new Error(tool==='sign'?'Place at least one signature on a page first.':'Add at least one non-empty text box to a page first.');
     } else {
-      const text=getOption('textToAdd','').trim();if(!text)throw new Error('Enter the text to add.');const size=Math.max(6,Math.min(72,Number(getOption('textFontSize','12'))||12));const color=hexRgb(getOption('textColor','#111827'));const font=await doc.embedFont(PDFLib.StandardFonts.Helvetica);
-      for(const one of selected){const p=pages[one-1];const lines=text.split(/\r?\n/).slice(0,20);const x=Math.max(0,Math.min(p.getWidth()-20,xPct*p.getWidth()));const y=Math.max(0,Math.min(p.getHeight()-size,(1-yPct)*p.getHeight()-size));p.drawText(lines.join('\n'),{x,y,size,font,color,lineHeight:size*1.25,maxWidth:Math.max(30,p.getWidth()-x-12)});}
+      const targetPages=parsePageRanges(raw,total);const selectedItem=getSelectedPageItem();const fallbackPage=selectedItem?.page||state.pdfPage;const activeItems=allItems.filter(item=>item.page===fallbackPage);
+      if(!activeItems.length)throw new Error('Place at least one item on the current page first, or use “placed” to export page-specific items.');
+      for(const number of targetPages){const own=allItems.filter(item=>item.page===number);const use=own.length?own:activeItems;use.forEach(item=>jobs.push({page:number,item}));}
     }
-    const bytes=await doc.save({useObjectStreams:true});downloadBytes(bytes,`${stem(pdfFile.name)}-${tool==='sign'?'signed':'filled'}.pdf`);return tool==='sign'?'Signature added and PDF downloaded.':'Text added and PDF downloaded.';
+    const embeddedSignatures=new Map();
+    for(const job of jobs){
+      const page=pages[job.page-1];const item=job.item;const pageW=page.getWidth(),pageH=page.getHeight();const x=Math.max(0,Math.min(pageW-1,item.x*pageW));
+      if(tool==='sign'){
+        let image=embeddedSignatures.get(item.dataUrl);if(!image){image=await doc.embedPng(dataUrlBytes(item.dataUrl));embeddedSignatures.set(item.dataUrl,image);}
+        const width=Math.max(20,Math.min(pageW*.9,item.w*pageW));const height=width*(image.height/image.width);const y=Math.max(0,Math.min(pageH-height,pageH-item.y*pageH-height));
+        page.drawImage(image,{x,y,width,height});
+      } else {
+        const text=(item.text||'').trim();if(!text)continue;
+        const size=Math.max(6,Math.min(72,item.fontSize||12));const fontKey=item.fontFamily==='times'?'TimesRoman':item.fontFamily==='courier'?'Courier':'Helvetica';const font=await doc.embedFont(PDFLib.StandardFonts[fontKey]);
+        const boxW=Math.max(24,Math.min(pageW-x,item.w*pageW));const boxH=Math.max(size*1.3,Math.min(pageH,item.h*pageH));const y=Math.max(0,Math.min(pageH-boxH,pageH-item.y*pageH-boxH));
+        if(item.cover)page.drawRectangle({x,y,width:boxW,height:boxH,color:PDFLib.rgb(1,1,1),borderWidth:0});
+        page.drawText(text.slice(0,1500),{x:x+2,y:y+Math.max(1,boxH-size-3),size,font,color:hexRgb(item.color||'#111827'),lineHeight:size*1.25,maxWidth:Math.max(20,boxW-5)});
+      }
+    }
+    const bytes=await doc.save({useObjectStreams:true});downloadBytes(bytes,`${stem(pdfFile.name)}-${tool==='sign'?'signed':'filled'}.pdf`);
+    return tool==='sign'?'All placed signatures have been added. The complete PDF has been downloaded.':'All placed text boxes have been added. The complete PDF has been downloaded.';
   }
   async function runSelectedTool() {
     if(state.busy || !state.tool || !state.files.length)return;
@@ -263,7 +453,11 @@
   $('fileInput').addEventListener('change',e=>onFilesChanged(e.target.files));
   $('uploadBox').addEventListener('dragover',e=>{e.preventDefault();$('uploadBox').classList.add('is-dragging');});$('uploadBox').addEventListener('dragleave',()=> $('uploadBox').classList.remove('is-dragging'));$('uploadBox').addEventListener('drop',e=>{e.preventDefault();$('uploadBox').classList.remove('is-dragging');if(e.dataTransfer?.files?.length)onFilesChanged(e.dataTransfer.files);});
   $('runTool').addEventListener('click',runSelectedTool);$('resetTool').addEventListener('click',resetTool);$('closeWorkbench').addEventListener('click',()=>{$('workbench').hidden=true;state.tool=null;document.querySelector('#tools').scrollIntoView({behavior:'smooth'});});
-  $('prevPage').addEventListener('click',async()=>{if(state.pdfPage>1){state.pdfPage--;await renderCurrentPage();}});$('nextPage').addEventListener('click',async()=>{if(state.pdfPage<state.pageCount){state.pdfPage++;await renderCurrentPage();}});
+  $('prevPage').addEventListener('click',()=>{if(state.pdfPage>1)jumpToPage(state.pdfPage-1);});$('nextPage').addEventListener('click',()=>{if(state.pdfPage<state.pageCount)jumpToPage(state.pdfPage+1);});
+  $('pageJumpInput').addEventListener('change',()=>jumpToPage($('pageJumpInput').value));
+  $('pageJumpInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();jumpToPage($('pageJumpInput').value);$('pageJumpInput').blur();}});
+  $('pdfStageWrap').addEventListener('scroll',()=>{if(state.continuousView)updateCurrentPageFromScroll();},{passive:true});
+  window.addEventListener('scroll',()=>{if(state.continuousView)updateCurrentPageFromScroll();},{passive:true});
   setupPlacementEvents(); $('year').textContent=new Date().getFullYear();
   // Inform the visitor if a CDN script failed, rather than leaving silent controls.
   window.addEventListener('load',()=>{if(!window.PDFLib||!window.pdfjsLib||!window.JSZip)setTimeout(()=>{if(!window.PDFLib||!window.pdfjsLib||!window.JSZip){setStatus('Some browser libraries could not load. Check your connection or retry later; Eaziply does not use a paid API.','error');}},1000);});

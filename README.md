@@ -12,7 +12,11 @@ A static website for GitHub + Vercel. No custom backend, database, paid API, or 
 - Combine JPG/PNG and browser-supported images into a PDF
 - Render selected PDF pages to JPG/PNG images in a ZIP
 - Sign PDF with a typed name (6 visual styles), drawn signature, or uploaded signature image
-- Place text on a PDF page
+- Save up to 8 reusable signature images in the browser local storage on the visitor's device
+- Continuous vertical multi-page editor view for Sign PDF and Fill & add text, with a persistent page counter and exact page-number jump
+- Add multiple movable/resizable signature and text overlays on different pages
+- Place editable text boxes directly on a PDF page; choose font, size and color
+- Option to visually cover old text with a white patch before adding replacement text (not a true rewrite of the original text layer)
 - Add a text watermark
 - Add page numbers
 - Basic PDF optimization/re-save (may not shrink all files; does not aggressively recompress embedded images)
@@ -45,7 +49,7 @@ Review the current library licenses and versions before making a commercial rele
 - Rotate a page and verify it in a PDF viewer.
 - Create a PDF from two JPG/PNG images.
 - Export a short PDF to image files and open the ZIP.
-- Type, draw, and upload a test signature; click the preview to set placement; test a single page and `all` pages.
+- Type, draw, and upload a test signature; test the continuous page stack, exact page jump (for example page 20 of 33), saved-signature reuse after refresh, page-specific signatures, dragging/resizing, and complete-document export.
 - Add text, a watermark, and page numbers.
 - Try basic optimization and compare the actual file size; this tool does not promise a smaller file.
 - Test on desktop and mobile with a small PDF first.
@@ -57,7 +61,9 @@ Review the current library licenses and versions before making a commercial rele
 - Password-protected/encrypted PDFs may fail to open.
 - PDF-to-image export creates raster images; it does not preserve selectable text in those images.
 - Large documents can use substantial browser memory. The PDF-to-image tool caps one export at 40 pages and split ZIP exports at 80 pages.
-- A visible signature mark is not a certificate-based cryptographic signature or proof of identity. Confirm the recipient's requirements for important/legal documents.
+- Saved signatures are stored in browser local storage on the current device; users should not save them on shared devices.
+- A visible signature mark is not a certificate-based cryptographic signature or proof of identity.
+- Existing PDF text is not directly edited; the optional white cover is a visual overlay and is safest on plain backgrounds. Confirm the recipient's requirements for important/legal documents.
 - The first version uses external CDNs for JavaScript libraries, so the app itself will need internet access to load unless the libraries are later bundled with the repository.
 
 ## Contact
