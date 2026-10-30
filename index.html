@@ -13,6 +13,9 @@
   <meta property="og:url" content="https://eaziply.vercel.app/">
   <title>Eaziply — Free PDF Tools: Merge, Split, Sign & Convert</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Allura&family=Caveat:wght@500;600;700&family=Cookie&family=Dancing+Script:wght@500;600;700&family=Great+Vibes&family=Kaushan+Script&family=Marck+Script&family=Pacifico&family=Parisienne&family=Playball&family=Sacramento&family=Satisfy&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <!-- These are client-side libraries, not paid APIs. Files are processed in the visitor's browser. -->
   <script defer src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -42,7 +45,7 @@
         <h1>Your PDF work,<br><span>all in one place.</span></h1>
         <p>Merge, split, rotate, convert, sign and edit PDFs without creating an account. Your documents stay on your device while you work.</p>
         <div class="hero-actions"><a class="btn btn-primary" href="#tools">Explore PDF tools <span>↓</span></a><span class="hero-note"><span class="mini-lock">▣</span> No upload to Eaziply servers</span></div>
-        <div class="hero-stats"><div><strong>12</strong><span>useful tools</span></div><div><strong>0</strong><span>accounts required</span></div><div><strong>100%</strong><span>browser-side processing* </span></div></div>
+        <div class="hero-stats"><div><strong>11</strong><span>useful tools</span></div><div><strong>0</strong><span>accounts required</span></div><div><strong>100%</strong><span>browser-side processing* </span></div></div>
       </div>
       <div class="hero-art" aria-hidden="true">
         <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
@@ -70,8 +73,7 @@
         <button class="tool-card" data-tool="rotate" data-category="organize"><span class="tool-icon icon-amber">↻</span><strong>Rotate PDF</strong><span>Rotate all pages or a selected range.</span><em>Rotate pages <b>→</b></em></button>
         <button class="tool-card" data-tool="images-to-pdf" data-category="convert"><span class="tool-icon icon-green">▧</span><strong>JPG to PDF</strong><span>Turn multiple images into one PDF.</span><em>Create PDF <b>→</b></em></button>
         <button class="tool-card" data-tool="pdf-to-images" data-category="convert"><span class="tool-icon icon-blue">▣</span><strong>PDF to JPG / PNG</strong><span>Export PDF pages as images in a ZIP.</span><em>Convert pages <b>→</b></em></button>
-        <button class="tool-card" data-tool="sign" data-category="sign"><span class="tool-icon icon-violet">✍</span><strong>Sign PDF</strong><span>Type, draw or upload a signature and place it.</span><em>Add signature <b>→</b></em></button>
-        <button class="tool-card" data-tool="add-text" data-category="sign"><span class="tool-icon icon-amber">T</span><strong>Fill & add text</strong><span>Add names, dates and text to any page.</span><em>Fill document <b>→</b></em></button>
+        <button class="tool-card" data-tool="sign" data-category="sign"><span class="tool-icon icon-violet">✍</span><strong>Fill &amp; Sign PDF</strong><span>Fill forms, add text and place reusable signatures.</span><em>Open editor <b>→</b></em></button>
         <button class="tool-card" data-tool="watermark" data-category="sign"><span class="tool-icon icon-teal">◈</span><strong>Watermark PDF</strong><span>Add a text watermark to pages.</span><em>Add watermark <b>→</b></em></button>
         <button class="tool-card" data-tool="page-numbers" data-category="sign"><span class="tool-icon icon-blue">№</span><strong>Add page numbers</strong><span>Number every page in one action.</span><em>Number pages <b>→</b></em></button>
         <button class="tool-card" data-tool="compress" data-category="optimize"><span class="tool-icon icon-green">⌁</span><strong>Optimize PDF (basic)</strong><span>Re-save a PDF using object streams.</span><em>Optimize file <b>→</b></em></button>
@@ -82,7 +84,20 @@
     <section class="workbench-section" id="workbench" hidden aria-labelledby="workbenchTitle">
       <div class="workbench-heading"><div><div class="eyebrow">PDF WORKSPACE</div><h2 id="workbenchTitle">Choose a tool</h2><p id="workbenchDescription">Upload a file to begin.</p></div><button type="button" class="btn btn-ghost" id="closeWorkbench">Close ✕</button></div>
       <div class="workbench-card">
-        <div class="workbench-topline"><div class="work-step"><span>1</span><div><strong>Add your files</strong><small>Select PDF or image files from your device.</small></div></div><div class="work-step"><span>2</span><div><strong>Set options</strong><small>Choose pages, format or signing details.</small></div></div><div class="work-step"><span>3</span><div><strong>Download</strong><small>Save the result directly to your device.</small></div></div></div>
+        <div class="fill-sign-toolbar" id="fillSignToolbar" hidden>
+          <div class="editor-mode-switch" role="toolbar" aria-label="PDF editor tools">
+            <button type="button" class="editor-mode-button" data-editor-mode="text"><span>T</span>Text</button>
+            <button type="button" class="editor-mode-button" data-editor-mode="forms"><span>☷</span>Forms</button>
+            <button type="button" class="editor-mode-button is-active" data-editor-mode="signature"><span>✍</span>Sign</button>
+            <button type="button" class="editor-mode-button editor-select-mode" data-editor-mode="select"><span>↖</span>Select</button>
+          </div>
+          <div class="editor-toolbar-actions">
+            <span id="editorItemsStatus" class="editor-items-status">No items placed</span>
+            <button type="button" class="btn btn-ghost editor-repeat-button" id="repeatAllPagesButton" title="Repeat the selected page's items on every page">Repeat on all pages</button>
+            <button type="button" class="btn btn-primary editor-download-button" id="downloadEditedPdf" disabled>Apply changes &amp; Download</button>
+          </div>
+        </div>
+        <div class="workbench-topline" id="workbenchTopline"><div class="work-step"><span>1</span><div><strong>Add your files</strong><small>Select PDF or image files from your device.</small></div></div><div class="work-step"><span>2</span><div><strong>Set options</strong><small>Choose pages, format or signing details.</small></div></div><div class="work-step"><span>3</span><div><strong>Download</strong><small>Save the result directly to your device.</small></div></div></div>
         <div class="workbench-content">
           <div class="input-column">
             <label class="upload-box" id="uploadBox"><input type="file" id="fileInput" hidden><span class="upload-symbol">↑</span><strong id="uploadTitle">Choose file(s)</strong><span id="uploadHint">PDF files supported</span><span class="upload-button">Browse files</span></label>
@@ -97,12 +112,12 @@
                 <label class="page-jump-control" aria-label="Current page and total pages"><input id="pageJumpInput" type="number" min="1" max="1" value="1" inputmode="numeric" aria-label="Go to page"><span>/</span><strong id="pageCountLabel">1</strong></label>
                 <button type="button" id="nextPage" aria-label="Next page">›</button>
               </div></div>
-            <div class="preview-empty" id="previewEmpty"><span class="preview-file-icon">PDF</span><strong>Preview appears here</strong><span>For signing or adding text, click the document where you want to place the item.</span></div>
+            <div class="preview-empty" id="previewEmpty"><span class="preview-file-icon">PDF</span><strong>Preview appears here</strong><span>Choose Text or Sign in the editor toolbar, then click a page to place an item.</span></div>
             <div class="pdf-stage-wrap" id="pdfStageWrap" hidden>
               <div class="pdf-stage" id="pdfStage"><canvas id="pdfCanvas"></canvas><div id="placementOverlay" class="placement-overlay" hidden></div></div>
               <div class="continuous-pages" id="continuousPages" hidden></div>
             </div>
-            <p class="preview-help" id="previewHelp" hidden>For Sign PDF and Fill &amp; add text, every page is shown below. Click a page to add an item, use the page number box to jump directly to a page, and drag or resize items.</p>
+            <p class="preview-help" id="previewHelp" hidden>Fill &amp; Sign uses a continuous page view. Choose Text, Forms or Sign, click the page to add or fill, and drag/resize placed items. Keep the page number control to jump to any exact page.</p>
           </div>
         </div>
       </div>
@@ -117,10 +132,10 @@
     <section class="faq-section" id="faq"><div class="section-header"><div><div class="eyebrow">HELP CENTER</div><h2>Frequently asked questions</h2></div></div>
       <details><summary>Are my PDFs uploaded to a server?</summary><p>No. The tools in this first version process selected PDF and image files in your browser. The app downloads its JavaScript libraries from public CDNs, but it does not send your selected documents to an Eaziply processing server.</p></details>
       <details><summary>Does Eaziply need an API key or an account?</summary><p>No API key, database, account or custom backend is required. The static website is designed for GitHub and Vercel hosting. Internet access is required to load the app and its CDN libraries.</p></details>
-      <details><summary>Can I save and reuse my signature?</summary><p>Yes. In Sign PDF, type, draw or upload your signature and choose “Save this signature”. It is stored in this browser on this device, so you can select it again on future visits. You can delete saved signatures from the same controls. Do not save a signature on a shared or untrusted device.</p></details>
-      <details><summary>Can I see every PDF page and jump to an exact page?</summary><p>Yes. In Sign PDF and Fill &amp; add text, pages appear in a continuous vertical view. The page control (for example, 1 / 33) stays available; type a page number and press Enter to jump directly to it. Scrolling also updates the current page number.</p></details>
+      <details><summary>Can I save and reuse my signature?</summary><p>Yes. In Fill &amp; Sign PDF, type, draw or upload your signature and choose “Save this signature”. It is stored in this browser on this device, so you can select it again on future visits. You can delete saved signatures from the same controls. Do not save a signature on a shared or untrusted device.</p></details>
+      <details><summary>Can I see every PDF page and jump to an exact page?</summary><p>Yes. In Fill &amp; Sign PDF, pages appear in a continuous vertical view. The page control (for example, 1 / 33) stays available; type a page number and press Enter to jump directly to it. Scrolling also updates the current page number.</p></details>
       <details><summary>Can I edit text already inside a PDF?</summary><p>Eaziply can add new editable text boxes. For existing text, the “Cover old text” option places a white patch behind replacement text; it does not rewrite the original PDF text layer and may cover nearby lines or images. It works best on plain white areas.</p></details>
-      <details><summary>Can I add a handwritten-style signature?</summary><p>Yes. In Sign PDF, type a name and choose a style, draw with your mouse or touch screen, or upload a transparent signature image. Place it on any page, drag or resize it, and download the entire edited PDF. A visible signature is not the same as a certificate-based digital signature.</p></details>
+      <details><summary>Can I add a handwritten-style signature?</summary><p>Yes. In Fill &amp; Sign PDF, type a name and choose a style, draw with your mouse or touch screen, or upload a transparent signature image. Place it on any page, drag or resize it, and download the entire edited PDF. A visible signature is not the same as a certificate-based digital signature.</p></details>
       <details><summary>Will compression always make my PDF smaller?</summary><p>No. Basic optimization rewrites the PDF using object streams, but it does not aggressively re-compress every embedded image. The resulting file may be smaller, similar in size, or occasionally larger.</p></details>
       <details><summary>Does Eaziply convert PDFs to editable Word or Excel files?</summary><p>Not in this first version. High-quality Office conversion and OCR for scanned documents require more specialized processing and testing. We prefer to show only tools that are actually implemented.</p></details>
       <details><summary>Is an electronic signature legally valid?</summary><p>Rules and acceptance vary by document, recipient and jurisdiction. Eaziply places a visible signature image; it does not independently verify identity or apply a certificate-based cryptographic digital signature.</p></details>

@@ -53,3 +53,106 @@
 .pdf-page-canvas-placeholder::after{content:"Page preview loads as you scroll";padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.86);box-shadow:0 2px 9px rgba(25,30,70,.08)}
 .pdf-page-surface[data-rendered="true"] .pdf-page-canvas-placeholder{display:none}
 @media(max-width:720px){.pdf-page-item{scroll-margin-top:145px}}
+
+/* Unified Fill & Sign workspace: Sejda-inspired workflow, original Eaziply styling. */
+.workbench-card.is-fill-sign .workbench-topline{display:none}
+.fill-sign-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:35}
+.editor-mode-switch,.editor-toolbar-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.editor-mode-button{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid transparent;border-radius:10px;background:#f7f8fc;color:#596078;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}
+.editor-mode-button span{display:grid;place-items:center;min-width:19px;height:19px;border-radius:5px;background:#e9e7ff;color:#5d50d8;font-size:13px;font-weight:900}
+.editor-mode-button:hover,.editor-mode-button.is-active{border-color:#d9d4ff;background:#efedff;color:#4e43c4}
+.editor-items-status{font-size:10px;color:#81879b;white-space:nowrap}
+.editor-repeat-button{font-size:10px;padding:9px 11px}
+.editor-download-button{font-size:10px;padding:10px 13px;white-space:nowrap}
+.editor-download-button:disabled{opacity:.45;cursor:not-allowed}
+.workbench-card.is-fill-sign .workbench-content{grid-template-columns:minmax(260px,330px) minmax(0,1fr);align-items:stretch}
+.workbench-card.is-fill-sign .input-column{max-height:calc(100vh - 160px);overflow:auto;position:sticky;top:90px;align-self:start;border-right:1px solid var(--line)}
+.workbench-card.is-fill-sign .preview-column{min-width:0}
+.workbench-card.is-fill-sign .preview-header{position:sticky;top:0;z-index:32;background:#fff}
+.workbench-card.is-fill-sign .preview-header.is-sticky-page-controls{top:0}
+.fill-sign-sidebar{display:flex;flex-direction:column;gap:14px}
+.editor-side-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:4px;background:#f3f4fa;border-radius:11px}
+.editor-side-tab{border:0;border-radius:8px;padding:9px 5px;background:transparent;color:#777e93;font-size:10px;font-weight:850;cursor:pointer}
+.editor-side-tab.is-active{background:#fff;color:#5145cf;box-shadow:0 2px 9px rgba(25,30,70,.08)}
+.editor-settings-panel{display:flex;flex-direction:column;gap:10px;min-width:0}
+.signature-preview-card{padding:9px;border:1px solid var(--line);border-radius:11px;background:#fbfbfe}
+.signature-preview-card>span{display:block;margin:0 0 5px;color:#858ba0;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}
+.signature-preview-card canvas{display:block;width:100%;height:65px;background:#fff;border:1px dashed #e1e3ed;border-radius:8px}
+.range-value-row{display:flex;align-items:center;gap:10px}.range-value-row input{flex:1;min-width:0}.range-value-row output{min-width:48px;color:#656d83;font-size:10px;font-weight:800;text-align:right}
+.text-style-toggles{display:flex;gap:8px}.text-style-toggles label{display:flex;align-items:center;gap:5px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:#667087;font-size:10px;font-weight:750}
+.form-fields-intro p{margin:5px 0 2px;color:#788097;font-size:10px;line-height:1.55}
+.acro-form-fields{display:flex;flex-direction:column;gap:9px;max-height:360px;overflow:auto}
+.acro-field-row{display:flex;flex-direction:column;gap:5px;color:#70778d;font-size:10px;font-weight:800}
+.acro-field-row .control{width:100%;min-width:0}
+.empty-fields{display:flex;flex-direction:column;gap:5px;padding:13px;border:1px dashed #dfe2ee;border-radius:10px;background:#fafbff;color:#7a8196;font-size:10px;line-height:1.55}
+.empty-fields strong{color:#545d75;font-size:11px}
+.editor-page-range{border-top:1px solid var(--line);padding-top:13px}
+.editor-sidebar-foot{display:flex;align-items:center;justify-content:space-between;gap:9px;border-top:1px solid var(--line);padding-top:11px;color:#83899b;font-size:9px}
+.editor-sidebar-foot .text-button{font-size:10px}
+.acro-widget-layer{position:absolute;inset:0;z-index:6;pointer-events:none}
+.acro-widget-shell{position:absolute;pointer-events:auto;min-width:20px;min-height:14px;display:flex;align-items:stretch}
+.acro-widget-control{width:100%;height:100%;min-width:0;min-height:0;padding:1px 3px;border:1px solid rgba(75,105,210,.55);border-radius:2px;background:rgba(225,237,255,.54);color:#1a2443;font:inherit;font-size:clamp(9px,1.1vw,13px);outline:0;box-sizing:border-box}
+.acro-widget-control:focus{border:2px solid #6657e8;background:rgba(255,255,255,.94);box-shadow:0 0 0 2px rgba(102,87,232,.14)}
+.acro-widget-control[type=checkbox]{width:100%;height:100%;accent-color:#6657e8}
+.pdf-overlay-item{touch-action:none;cursor:move}
+.pdf-overlay-item .overlay-text-content{cursor:text;touch-action:pan-y}
+.overlay-item-toolbar{gap:4px}
+.overlay-item-toolbar .overlay-duplicate-button{background:#eef8f5;color:#16876b}
+.overlay-resize-handle{display:none;width:11px;height:11px;border:2px solid #fff;border-radius:50%;background:#6657e8;box-shadow:0 0 0 1px #6657e8;position:absolute;padding:0;z-index:12;touch-action:none}
+.pdf-overlay-item.is-selected .overlay-resize-handle{display:block}
+.overlay-resize-handle.resize-nw{left:-5px;top:-5px;right:auto;bottom:auto;cursor:nwse-resize}
+.overlay-resize-handle.resize-ne{right:-5px;top:-5px;left:auto;bottom:auto;cursor:nesw-resize}
+.overlay-resize-handle.resize-sw{left:-5px;bottom:-5px;right:auto;top:auto;cursor:nesw-resize}
+.overlay-resize-handle.resize-se{right:-5px;bottom:-5px;left:auto;top:auto;cursor:nwse-resize}
+.pdf-page-surface{isolation:isolate}
+.preview-header .page-controls{display:inline-flex;align-items:center}
+.page-controls button:disabled{opacity:.35;cursor:default}
+.workbench-card.is-fill-sign .preview-header.is-sticky-page-controls{top:0}
+@media(max-width:980px){.workbench-card.is-fill-sign .workbench-content{grid-template-columns:minmax(230px,285px) minmax(0,1fr)}.editor-toolbar-actions{gap:5px}}
+@media(max-width:720px){
+  .fill-sign-toolbar{position:sticky;top:0;align-items:flex-start;flex-direction:column;padding:9px 10px;gap:8px}
+  .editor-mode-switch{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}
+  .editor-mode-button{padding:8px 10px}
+  .editor-toolbar-actions{width:100%;justify-content:space-between;flex-wrap:nowrap}
+  .editor-repeat-button{display:none}
+  .editor-download-button{padding:9px 10px}
+  .workbench-card.is-fill-sign .workbench-content{grid-template-columns:1fr}
+  .workbench-card.is-fill-sign .input-column{position:relative;top:auto;max-height:none;overflow:visible;border-right:0;border-bottom:1px solid var(--line)}
+  .workbench-card.is-fill-sign .preview-header.is-sticky-page-controls{top:0}
+  .workbench-card.is-fill-sign .preview-column{min-height:240px}
+  .acro-form-fields{max-height:250px}
+}
+
+/* Final Fill & Sign refinements: one workspace, clear modes, less clutter. */
+.workbench-card.is-fill-sign .action-row{display:none!important}
+.workbench-card.is-fill-sign .upload-box{padding:15px 12px;gap:5px}
+.workbench-card.is-fill-sign .upload-symbol{width:31px;height:31px;font-size:20px}
+.workbench-card.is-fill-sign .upload-box strong{font-size:11px}
+.workbench-card.is-fill-sign .upload-button{padding:6px 11px;margin-top:2px}
+.workbench-card.is-fill-sign .input-column{background:#fff;box-shadow:inset -1px 0 0 #eceef5}
+.workbench-card.is-fill-sign .preview-column{background:#f1f2f7}
+.workbench-card.is-fill-sign .preview-header{padding:12px 16px;min-height:58px}
+.workbench-card.is-fill-sign .preview-header>div:first-child strong{font-size:13px}
+.workbench-card.is-fill-sign .preview-meta{font-size:10px}
+.editor-mode-button{min-width:82px;justify-content:center}
+.editor-mode-button.editor-select-mode{min-width:72px;background:transparent;border-color:#e8e9f1;color:#737b91}
+.editor-mode-button.editor-select-mode.is-active{background:#efedff;border-color:#d9d4ff;color:#4e43c4}
+.editor-items-status{padding:0 5px}
+.editor-download-button{min-width:164px}
+.workbench-card.is-fill-sign .preview-header.is-sticky-page-controls{position:sticky;top:76px;z-index:32}
+.pdf-page-item{position:relative}
+.pdf-page-label{padding:0 8px}
+.pdf-page-label strong{font-weight:850}
+.page-jump-control input{width:42px;min-width:42px}
+.page-jump-control input::-webkit-inner-spin-button,.page-jump-control input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.page-jump-control input[type=number]{-moz-appearance:textfield}
+.overlay-text-content:focus{background:rgba(255,255,255,.75);box-shadow:0 0 0 1px rgba(102,87,232,.18)}
+.acro-widget-layer{font-family:Arial,sans-serif}
+@media(max-width:980px){.workbench-card.is-fill-sign .input-column{max-height:calc(100vh - 135px)}}
+@media(max-width:720px){
+  .editor-mode-button{min-width:73px;font-size:10px}
+  .editor-mode-button.editor-select-mode{min-width:65px}
+  .editor-download-button{min-width:0;font-size:10px}
+  .workbench-card.is-fill-sign .preview-header.is-sticky-page-controls{top:125px}
+  .workbench-card.is-fill-sign .input-column{max-height:none}
+}
